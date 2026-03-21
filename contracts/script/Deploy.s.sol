@@ -34,11 +34,11 @@ contract Deploy is Script {
         nft.setMinter(address(executor), true);
         executor.setRelayer(relayer, true);
 
-        // 配置费率
-        // USDC: 0.1 USDC (6 decimals)
-        executor.setFee(address(usdc), 100_000);
-        // BOX: 0.1 BOX (18 decimals)
-        executor.setFee(address(box), 0.1 ether);
+        // 配置费率（2x markup：实际 gas 成本约一半，平台赚取差价）
+        // USDC: 0.2 USDC (6 decimals)
+        executor.setFee(address(usdc), 200_000);
+        // BOX: 0.2 BOX (18 decimals)
+        executor.setFee(address(box), 0.2 ether);
 
         // 给 deployer mint 测试代币
         usdc.mint(deployer, 1000 * 1e6);   // 1000 USDC

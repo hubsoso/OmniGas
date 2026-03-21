@@ -18,8 +18,8 @@ contract OmniGasTest is Test {
     address relayer = makeAddr("relayer");
     address user = makeAddr("user");
 
-    uint256 constant USDC_FEE = 100_000;   // 0.1 USDC
-    uint256 constant BOX_FEE  = 0.1 ether; // 0.1 BOX
+    uint256 constant USDC_FEE = 200_000;   // 0.2 USDC (2x markup)
+    uint256 constant BOX_FEE  = 0.2 ether; // 0.2 BOX  (2x markup)
 
     function setUp() public {
         usdc = new MockUSDC();
@@ -33,8 +33,8 @@ contract OmniGasTest is Test {
         vault.setExecutor(address(executor), true);
         nft.setMinter(address(executor), true);
         executor.setRelayer(relayer, true);
-        executor.setFee(address(usdc), USDC_FEE);
-        executor.setFee(address(box), BOX_FEE);
+        executor.setFee(address(usdc), USDC_FEE); // 0.2 USDC
+        executor.setFee(address(box), BOX_FEE);   // 0.2 BOX
     }
 
     // ── USDC 路径 ──────────────────────────────────────────────
