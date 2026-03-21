@@ -65,15 +65,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       account: walletClient.account,
     })
 
-    const receipt = await publicClient.waitForTransactionReceipt({
-      hash: txHash,
-      timeout: 60_000,
-    })
+    let blockNumber: string | undefined
+    try {
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: txHash,
+        timeout: 60_000,
+      })
+      blockNumber = receipt.blockNumber.toString()
+    } catch {
+      // timeout — tx was submitted, return hash anyway
+    }
 
     return res.json({
       success: true,
       txHash,
-      blockNumber: receipt.blockNumber.toString(),
+      ...(blockNumber ? { blockNumber } : {}),
     })
   } catch (error: any) {
     console.error('[relay] error:', error)
