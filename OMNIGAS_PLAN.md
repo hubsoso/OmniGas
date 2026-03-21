@@ -26,10 +26,11 @@ OmniGas 是一个 Web3 Gas 预付池产品，核心功能是让用户用 USDT / 
 **理由**：Uniswap 官方出品，swap 功能完整，UI 好看，代码干净，
 embed 一行即可得到完整 swap 卡片，不需要自己写任何 swap 逻辑。
 
-**本地路径**：`/Users/mac/Desktop/Omni_Gas/widgets-demo`
+**本地路径**：`/Users/mac/Desktop/Omni_Gas/widgets-demo/frontend`
 
 **运行方式**：
 ```bash
+cd frontend
 yarn dev
 # 访问 http://localhost:3000
 ```
@@ -100,21 +101,22 @@ const TOKEN_LIST = 'https://tokens.coingecko.com/uniswap/all.json'
 ## 文件结构
 ```
 widgets-demo/
-├── pages/
-│   └── index.tsx          # 主页面，含 OmniGas 选择器 + swap widget
-├── components/
-│   └── Web3Connectors.tsx # MetaMask / WalletConnect 连接逻辑
-├── connectors/
-│   └── index.ts           # 连接器列表
-├── lib/
-│   ├── paymasterClient.ts        # Pimlico client 初始化
-│   └── sendGaslessTransaction.ts # Gasless 交易发送逻辑
-├── styles/
-│   ├── OmniGas.module.css # OmniGas 选择器样式
-│   └── globals.css
-├── constants.ts           # RPC 配置
-├── .env.local             # API keys（不提交 git）
-└── OMNIGAS_PLAN.md        # 本文件
+├── frontend/
+│   ├── pages/
+│   │   └── index.tsx          # 主页面，含 OmniGas 选择器 + swap widget
+│   ├── components/
+│   │   └── Web3Connectors.tsx # MetaMask / WalletConnect 连接逻辑
+│   ├── connectors/
+│   │   └── index.ts           # 连接器列表
+│   ├── lib/
+│   │   ├── paymasterClient.ts        # Pimlico client 初始化
+│   │   └── sendGaslessTransaction.ts # Gasless 交易发送逻辑
+│   ├── styles/
+│   │   ├── OmniGas.module.css # OmniGas 选择器样式
+│   │   └── globals.css
+│   ├── constants.ts           # RPC 配置
+│   └── .env.local             # API keys（不提交 git）
+└── OMNIGAS_PLAN.md            # 本文件
 ```
 
 ---
