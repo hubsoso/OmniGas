@@ -196,16 +196,12 @@ const WalletHome: NextPage = () => {
 
   const executeAction = useCallback((action: PendingAction) => {
     if (action === 'swap') window.location.href = '/swap'
+    if (action === 'transfer') window.location.href = '/transfer'
     if (action === 'omnigas') {
       setShowOmnigas(true)
       setOmnigasStep('list')
       setOmnigasMsg('')
       setOmnigazTxHash('')
-    }
-    if (action === 'transfer') {
-      setShowTest(true)
-      setMsg('转账功能还在接入中，当前可先使用下方测试面板体验 OmniGas 流程。')
-      setTxHash('')
     }
   }, [])
 
