@@ -1,0 +1,95 @@
+.widgetColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 360px;
+}
+
+.card {
+  background: #f7f8fa;
+  border: 1px solid #d7d9df;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: rgba(0, 0, 0, 0.04) 0px 8px 16px;
+}
+
+.cardTitle {
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.875rem;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.tokenButton {
+  appearance: none;
+  background: #ffffff;
+  border: 1px solid #cfd3dc;
+  border-radius: 999px;
+  color: #111827;
+  cursor: pointer;
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.625rem 0.75rem;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tokenButton:hover {
+  border-color: #9ca3af;
+}
+
+.tokenButtonActive {
+  background: #ffffff;
+  border-color: #ff007a;
+  box-shadow: rgba(255, 0, 122, 0.15) 0px 0px 0px 3px;
+  color: #ff007a;
+}
+
+.helperText {
+  color: #4b5563;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0.875rem 0 0;
+}
+
+.actionButton {
+  appearance: none;
+  background: linear-gradient(135deg, #ff007a 0%, #ff6b8f 100%);
+  border: none;
+  border-radius: 0.875rem;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-top: 0.875rem;
+  padding: 0.8rem 1rem;
+  width: 100%;
+}
+
+.actionButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.successLink {
+  color: #0f766e;
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+  margin-top: 0.875rem;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+@media (max-width: 727px) {
+  .widgetColumn {
+    width: 100%;
+    max-width: 360px;
+  }
+}
