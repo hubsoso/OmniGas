@@ -12,6 +12,7 @@ import { connectors, useActiveProvider } from '../connectors'
 import { JSON_RPC_URL } from '../constants'
 import { THEME_ORDER, type ThemeMode, useThemeMode } from '../lib/theme'
 import { useCallback, useEffect, useState } from 'react'
+import styles from '../styles/Swap.module.css'
 
 const SwapWidget = dynamic<SwapWidgetProps>(
   () => import('@uniswap/widgets').then((mod) => mod.SwapWidget),
@@ -70,7 +71,7 @@ const SwapPage: NextPage = () => {
         hint: '#9ca3af',
         onAccent: '#ffffff',
         success: '#24c26a',
-        borderRadius: 1.4,
+        borderRadius: 1.65,
         fontFamily: "'Avenir Next', 'Segoe UI', sans-serif",
         fontFamilyCode: "'SF Mono', 'Courier New', monospace",
         tokenColorExtraction: false,
@@ -89,7 +90,7 @@ const SwapPage: NextPage = () => {
         hint: '#7d8596',
         onAccent: '#ffffff',
         success: '#24c26a',
-        borderRadius: 1.4,
+        borderRadius: 1.65,
         fontFamily: "'Avenir Next', 'Segoe UI', sans-serif",
         fontFamilyCode: "'SF Mono', 'Courier New', monospace",
         tokenColorExtraction: false,
@@ -138,85 +139,28 @@ const SwapPage: NextPage = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '24px',
-          background: isLight
-            ? 'linear-gradient(180deg, #eef2ff 0%, #f8fafc 100%)'
-            : 'linear-gradient(180deg, #0d1020 0%, #12162a 100%)',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '460px',
-            borderRadius: '28px',
-            padding: '16px',
-            background: isLight ? 'rgba(255,255,255,0.76)' : 'rgba(18,22,39,0.78)',
-            border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(255,255,255,0.08)',
-            boxShadow: isLight
-              ? '0 22px 60px rgba(99,102,241,0.14)'
-              : '0 22px 60px rgba(0,0,0,0.42)',
-            backdropFilter: 'blur(18px)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px',
-              marginBottom: '12px',
-            }}
-          >
+      <div className={[styles.page, isLight ? styles.light : styles.dark].join(' ')}>
+        <div className={styles.shell}>
+          <div className={styles.toolbar}>
             <button
+              type="button"
               onClick={() => router.back()}
               aria-label="Go back"
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '999px',
-                border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(255,255,255,0.1)',
-                background: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.06)',
-                color: isLight ? '#111827' : '#f9fafb',
-                fontSize: '18px',
-                cursor: 'pointer',
-              }}
+              className={styles.backButton}
             >
               ←
             </button>
             {account ? (
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 14px',
-                  borderRadius: '999px',
-                  background: isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.08)',
-                  border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(255,255,255,0.1)',
-                  color: isLight ? '#111827' : '#f9fafb',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                }}
-              >
+              <div className={styles.walletBadge}>
                 {`${account.slice(0, 6)}...${account.slice(-4)}`}
-                {!widgetSupportsConnectedChain && providerChainId !== null ? ' · Unsupported for widget' : ''}
+                {!widgetSupportsConnectedChain && providerChainId !== null ? (
+                  <span className={styles.warning}>· Unsupported for widget</span>
+                ) : null}
               </div>
             ) : null}
           </div>
 
-          <div
-            className="swap-widget-shell"
-            style={{
-              borderRadius: '24px',
-              overflow: 'hidden',
-            }}
-          >
+          <div className={`swap-widget-shell ${styles.widgetShell}`}>
             <SwapWidget
               jsonRpcEndpoint={JSON_RPC_URL}
               tokenList={WIDGET_TOKENS}
@@ -235,8 +179,44 @@ const SwapPage: NextPage = () => {
       </div>
 
       <style jsx global>{`
+        .swap-widget-shell > div {
+          border-radius: 26px !important;
+          box-shadow: none !important;
+        }
+
+        .swap-widget-shell [data-testid='settings-icon-button'],
+        .swap-widget-shell [data-testid='swap-button'],
+        .swap-widget-shell button {
+          transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease !important;
+        }
+
+        .swap-widget-shell [data-testid='swap-button']:hover,
+        .swap-widget-shell button:hover {
+          transform: translateY(-1px);
+        }
+
+        .swap-widget-shell button:focus-visible,
+        .swap-widget-shell input:focus-visible {
+          outline: none !important;
+          box-shadow: 0 0 0 4px ${isLight ? 'rgba(34, 197, 94, 0.18)' : 'rgba(52, 211, 153, 0.24)'} !important;
+        }
+
+        .swap-widget-shell input,
+        .swap-widget-shell button,
+        .swap-widget-shell a {
+          font-family: 'Avenir Next', 'Segoe UI', sans-serif !important;
+        }
+
         .swap-widget-shell a[href='https://uniswap.org/'] {
           display: none !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .swap-widget-shell [data-testid='settings-icon-button'],
+          .swap-widget-shell [data-testid='swap-button'],
+          .swap-widget-shell button {
+            transition: none !important;
+          }
         }
       `}</style>
     </>

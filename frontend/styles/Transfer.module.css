@@ -6,34 +6,48 @@
 
 .light {
   --page-bg:
-    linear-gradient(180deg, #f0f2ff 0%, #e8ebff 100%);
-  --shell-bg: rgba(255, 255, 255, 0.8);
-  --shell-border: rgba(0, 0, 0, 0.07);
+    radial-gradient(circle at top, rgba(86, 214, 146, 0.16), transparent 34%),
+    radial-gradient(circle at 20% 18%, rgba(75, 163, 255, 0.16), transparent 28%),
+    linear-gradient(180deg, #eef3ff 0%, #f7fafc 52%, #edf7f0 100%);
+  --shell-bg: rgba(255, 255, 255, 0.76);
+  --shell-border: rgba(15, 23, 42, 0.08);
   --text: #1d1d1f;
   --muted: #6e6e73;
-  --line: rgba(0, 0, 0, 0.08);
-  --card-shadow: 0 30px 80px rgba(17, 24, 39, 0.1);
-  --button-bg: #22c55e;
-  --button-bg-disabled: #b7ddc3;
+  --line: rgba(15, 23, 42, 0.08);
+  --line-strong: rgba(15, 23, 42, 0.12);
+  --card-shadow: 0 36px 80px rgba(15, 23, 42, 0.12);
+  --button-bg: linear-gradient(135deg, #1ebb68 0%, #11b891 100%);
+  --button-bg-disabled: linear-gradient(135deg, #b7ddc3 0%, #b8d8d3 100%);
   --button-text: #ffffff;
-  --chip-bg: rgba(0, 0, 0, 0.05);
-  --chip-border: rgba(0, 0, 0, 0.1);
+  --chip-bg: rgba(15, 23, 42, 0.045);
+  --chip-border: rgba(15, 23, 42, 0.08);
+  --card-bg: rgba(255, 255, 255, 0.5);
+  --focus-ring: rgba(34, 197, 94, 0.18);
+  --field-glow: rgba(34, 197, 94, 0.1);
+  --field-focus-bg: rgba(15, 23, 42, 0.03);
 }
 
 .dark {
   --page-bg:
-    linear-gradient(180deg, #0d0d1a 0%, #141428 100%);
-  --shell-bg: rgba(255, 255, 255, 0.05);
+    radial-gradient(circle at top, rgba(39, 186, 134, 0.2), transparent 24%),
+    radial-gradient(circle at 85% 12%, rgba(63, 94, 251, 0.16), transparent 20%),
+    linear-gradient(180deg, #081019 0%, #0c1321 52%, #10192a 100%);
+  --shell-bg: rgba(10, 16, 26, 0.72);
   --shell-border: rgba(255, 255, 255, 0.08);
   --text: #ffffff;
-  --muted: rgba(255, 255, 255, 0.45);
-  --line: rgba(255, 255, 255, 0.09);
-  --card-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
-  --button-bg: #22c55e;
-  --button-bg-disabled: #335f42;
+  --muted: rgba(226, 232, 240, 0.62);
+  --line: rgba(148, 163, 184, 0.12);
+  --line-strong: rgba(148, 163, 184, 0.16);
+  --card-shadow: 0 36px 90px rgba(0, 0, 0, 0.42);
+  --button-bg: linear-gradient(135deg, #1ebb68 0%, #11b891 100%);
+  --button-bg-disabled: linear-gradient(135deg, #335f42 0%, #234d4f 100%);
   --button-text: #ffffff;
-  --chip-bg: rgba(255, 255, 255, 0.06);
-  --chip-border: rgba(255, 255, 255, 0.1);
+  --chip-bg: rgba(148, 163, 184, 0.08);
+  --chip-border: rgba(148, 163, 184, 0.12);
+  --card-bg: linear-gradient(180deg, rgba(15, 23, 42, 0.56) 0%, rgba(15, 23, 42, 0.34) 100%);
+  --focus-ring: rgba(52, 211, 153, 0.22);
+  --field-glow: rgba(52, 211, 153, 0.12);
+  --field-focus-bg: rgba(148, 163, 184, 0.06);
 }
 
 .page {
@@ -53,9 +67,22 @@
   width: min(100%, 448px);
   margin: 0 auto;
   background: var(--shell-bg);
-  border-left: 1px solid transparent;
-  border-right: 1px solid transparent;
-  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(28px);
+  position: relative;
+  overflow: hidden;
+}
+
+.shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 18%),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 24%);
+  opacity: 0.75;
 }
 
 .topbar {
@@ -65,6 +92,8 @@
   gap: 12px;
   padding: 18px 20px 12px;
   border-bottom: 1px solid var(--line);
+  position: relative;
+  z-index: 1;
 }
 
 .iconButton,
@@ -83,10 +112,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
+  background: var(--chip-bg);
   color: var(--text);
   border-radius: 999px;
+  border: 1px solid var(--chip-border);
   justify-self: start;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .backArrow {
@@ -118,6 +149,7 @@
   font-size: 12px;
   font-weight: 600;
   justify-self: end;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .content {
@@ -125,11 +157,17 @@
   display: flex;
   flex-direction: column;
   padding: 0 18px 6px;
+  position: relative;
+  z-index: 1;
 }
 
 .card {
-  margin-top: 2px;
-  background: transparent;
+  margin-top: 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  padding: 10px 18px 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .section,
@@ -139,6 +177,7 @@
   background: transparent;
   padding: 14px 0;
   text-align: left;
+  border: 0;
 }
 
 .sectionHeader {
@@ -152,6 +191,7 @@
   font-size: 15px;
   font-weight: 600;
   color: var(--text);
+  letter-spacing: -0.02em;
 }
 
 .addressInput,
@@ -161,6 +201,7 @@
   border: 0;
   outline: none;
   color: var(--text);
+  font-family: inherit;
 }
 
 .addressInput {
@@ -168,7 +209,11 @@
   min-height: 42px;
   font-size: 14px;
   line-height: 1.45;
-  padding: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  caret-color: #22c55e;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .addressInput::placeholder,
@@ -213,7 +258,7 @@
   color: #ffffff;
   font-size: 14px;
   font-weight: 700;
-  box-shadow: 0 10px 24px rgba(34, 197, 94, 0.18);
+  box-shadow: 0 14px 30px rgba(34, 197, 94, 0.22);
 }
 
 .tokenBadgeUsdc {
@@ -240,6 +285,7 @@
   gap: 8px;
   color: var(--text);
   cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .networkChip {
@@ -253,6 +299,7 @@
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
+  backdrop-filter: blur(10px);
 }
 
 .tokenName {
@@ -272,6 +319,7 @@
   font-size: 22px;
   color: var(--muted);
   line-height: 1;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .amountHeader {
@@ -285,13 +333,19 @@
 .balanceText {
   font-size: 12px;
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .amountRow {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: transparent;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .amountInput {
@@ -299,30 +353,39 @@
   font-weight: 700;
   letter-spacing: -0.06em;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
+  caret-color: #22c55e;
 }
 
 .maxButton {
   flex-shrink: 0;
-  min-width: 40px;
+  min-width: 54px;
+  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  background: transparent;
+  padding: 0 12px;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  border-radius: 999px;
   color: #22c55e;
   font-size: 14px;
   font-weight: 600;
   text-align: center;
+  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .footer {
   padding: 2px 18px 16px;
+  position: relative;
+  z-index: 1;
 }
 
 .submitMessage {
   margin: 0 0 8px;
   font-size: 12px;
   color: var(--muted);
+  min-height: 18px;
 }
 
 .submitMessageError {
@@ -339,16 +402,20 @@
   color: #22c55e;
   font-size: 12px;
   font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
 }
 
 .submitButton {
   width: 100%;
-  height: 46px;
-  border-radius: 14px;
+  height: 50px;
+  border-radius: 16px;
   background: var(--button-bg);
   color: var(--button-text);
   font-size: 17px;
   font-weight: 600;
+  box-shadow: 0 20px 34px rgba(18, 184, 145, 0.24);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .submitButton:disabled {
@@ -366,19 +433,20 @@
   padding: 16px;
   z-index: 20;
   overscroll-behavior: contain;
+  backdrop-filter: blur(10px);
 }
 
 .sheet {
   width: min(100%, 448px);
   border-radius: 24px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
   border: 1px solid var(--shell-border);
   box-shadow: var(--card-shadow);
   padding: 10px 14px 14px;
 }
 
 .dark .sheet {
-  background: #181828;
+  background: rgba(17, 24, 39, 0.92);
 }
 
 .sheetHandle {
@@ -419,6 +487,7 @@
   background: var(--chip-bg);
   color: var(--text);
   cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
 .networkList {
@@ -430,7 +499,7 @@
 .networkOption {
   appearance: none;
   border: 1px solid var(--line);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.02);
   border-radius: 18px;
   padding: 14px;
   display: flex;
@@ -440,11 +509,13 @@
   color: var(--text);
   cursor: pointer;
   text-align: left;
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .networkOptionActive {
   border-color: rgba(34, 197, 94, 0.55);
   background: rgba(34, 197, 94, 0.08);
+  box-shadow: 0 16px 28px rgba(34, 197, 94, 0.12);
 }
 
 .networkOptionLeft {
@@ -510,6 +581,7 @@
   font-weight: 700;
   color: var(--text);
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .networkOptionAmountSymbol {
@@ -537,6 +609,79 @@
   line-height: 1;
 }
 
+.iconButton:hover,
+.walletBadge:hover,
+.networkChipButton:hover,
+.maxButton:hover,
+.sheetClose:hover,
+.txLink:hover {
+  transform: translateY(-1px);
+}
+
+.iconButton:hover,
+.walletBadge:hover,
+.maxButton:hover,
+.sheetClose:hover {
+  border-color: var(--line-strong);
+  background: color-mix(in srgb, var(--chip-bg) 84%, white 16%);
+}
+
+.networkChipButton:hover .chevron {
+  transform: translateX(2px);
+  color: var(--text);
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 24px 40px rgba(18, 184, 145, 0.28);
+}
+
+.networkOption:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  box-shadow: 0 18px 28px rgba(15, 23, 42, 0.08);
+}
+
+.iconButton:focus-visible,
+.walletBadge:focus-visible,
+.networkChipButton:focus-visible,
+.maxButton:focus-visible,
+.submitButton:focus-visible,
+.sheetClose:focus-visible,
+.networkOption:focus-visible,
+ .txLink:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+.section:focus-within .addressInput,
+.section:focus-within .amountRow {
+  border-color: rgba(34, 197, 94, 0.48);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+}
+
+.addressInput,
+.amountInput,
+.submitMessage,
+.networkOptionAmountValue {
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page,
+  .iconButton,
+  .walletBadge,
+  .networkChipButton,
+  .chevron,
+  .maxButton,
+  .txLink,
+  .submitButton,
+  .sheetClose,
+  .networkOption {
+    transition: none;
+  }
+}
+
 @media (min-width: 961px) {
   .page {
     padding: 24px;
@@ -549,7 +694,7 @@
     min-height: 590px;
     max-height: calc(100vh - 48px);
     border: 1px solid var(--shell-border);
-    border-radius: 24px;
+    border-radius: 28px;
     box-shadow: var(--card-shadow);
     overflow: hidden;
   }
@@ -605,6 +750,12 @@
 
   .content {
     padding: 0 16px 4px;
+  }
+
+  .card {
+    margin-top: 12px;
+    padding: 8px 16px 6px;
+    border-radius: 24px;
   }
 
   .section,

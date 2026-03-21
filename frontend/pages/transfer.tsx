@@ -316,7 +316,9 @@ const TransferPage: NextPage = () => {
                 <textarea
                   className={styles.addressInput}
                   rows={3}
-                  placeholder="请输入接收地址"
+                  placeholder="请输入接收地址…"
+                  name="recipient"
+                  autoComplete="off"
                   value={recipient}
                   onChange={(event) => {
                     setRecipient(event.target.value)
@@ -376,8 +378,11 @@ const TransferPage: NextPage = () => {
                 <div className={styles.amountRow}>
                   <input
                     className={styles.amountInput}
+                    name="amount"
+                    type="text"
                     inputMode="decimal"
-                    placeholder="0.00"
+                    autoComplete="off"
+                    placeholder="0.00…"
                     value={amount}
                     onChange={(event) => {
                       setAmount(event.target.value)
@@ -416,6 +421,7 @@ const TransferPage: NextPage = () => {
                   submitStatus === 'error' || insufficientBalance ? styles.submitMessageError : '',
                   submitStatus === 'success' ? styles.submitMessageSuccess : '',
                 ].join(' ')}
+                aria-live="polite"
               >
                 {insufficientBalance ? '余额不足' : submitMessage}
               </p>
