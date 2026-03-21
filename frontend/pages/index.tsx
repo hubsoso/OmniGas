@@ -2,8 +2,9 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import { FiGlobe } from 'react-icons/fi'
 import { SupportedLocale, SUPPORTED_LOCALES, SwapWidget } from '@uniswap/widgets'
-import { createPublicClient, createWalletClient, custom, http, parseAbi } from 'viem'
-import { sepolia } from 'viem/chains'
+import type { TokenInfo } from '@uniswap/widgets'
+import { createPublicClient, createWalletClient, custom, parseAbi } from 'viem'
+import { mainnet, sepolia } from 'viem/chains'
 
 import '@uniswap/widgets/fonts.css'
 
@@ -14,20 +15,49 @@ import Web3Connectors from '../components/Web3Connectors'
 import { useActiveProvider } from '../connectors'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { JSON_RPC_URL } from '../constants'
+import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../lib/rpc'
 
-const TOKEN_LIST = 'https://tokens.uniswap.org'
 const UNI = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
+const USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+const WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 const GAS_TOKENS = ['ETH', 'USDC', 'BOX'] as const
 const ERC20_ABI = parseAbi(['function approve(address spender, uint256 amount) external returns (bool)'])
 const VAULT_ABI = parseAbi(['function deposit(address token, uint256 amount) external'])
 const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 11155111)
 const APP_CHAIN = sepolia
 const EXPLORER_TX_URL = 'https://sepolia.etherscan.io/tx/'
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || process.env.RPC_URL || APP_CHAIN.rpcUrls.default.http[0]
 const publicClient = createPublicClient({
   chain: APP_CHAIN,
-  transport: http(RPC_URL),
+  transport: createFallbackTransport(SEPOLIA_RPC_URLS),
 })
+const WIDGET_SUPPORTED_CHAIN_IDS = new Set([1, 3, 4, 5, 10, 42, 69, 137, 80001, 42161, 421611])
+const API_REQUEST_TIMEOUT_MS = 15_000
+const WIDGET_TOKENS: TokenInfo[] = [
+  {
+    chainId: 1,
+    address: WETH,
+    name: 'Wrapped Ether',
+    symbol: 'WETH',
+    decimals: 18,
+  },
+  {
+    chainId: 1,
+    address: USDC,
+    name: 'USD Coin',
+    symbol: 'USDC',
+    decimals: 6,
+  },
+  {
+    chainId: 1,
+    address: UNI,
+    name: 'Uniswap',
+    symbol: 'UNI',
+    decimals: 18,
+  },
+]
+const NETWORK_MODES = ['sepolia', 'mainnet'] as const
+
+type NetworkMode = (typeof NETWORK_MODES)[number]
 
 type GasToken = (typeof GAS_TOKENS)[number]
 
@@ -59,15 +89,47 @@ const hasRelayConfig = Boolean(
     process.env.NEXT_PUBLIC_EXECUTOR_ADDRESS
 )
 
+async function fetchJsonWithTimeout(input: RequestInfo, init?: RequestInit, timeoutMs = API_REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const response = await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    })
+
+    let data: any = null
+
+    try {
+      data = await response.json()
+    } catch {
+      data = null
+    }
+
+    return { response, data }
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`请求超时，已等待 ${(timeoutMs / 1000).toFixed(0)} 秒`)
+    }
+
+    throw error
+  } finally {
+    window.clearTimeout(timer)
+  }
+}
+
 const Home: NextPage = () => {
   const connectors = useRef<HTMLDivElement>(null)
   const focusConnectors = useCallback(() => connectors.current?.focus(), [])
   const provider = useActiveProvider()
 
+  const [networkMode, setNetworkMode] = useState<NetworkMode>('sepolia')
   const [locale, setLocale] = useState<SupportedLocale>('en-US')
   const [gasToken, setGasToken] = useState<GasToken>('ETH')
   const [txHash, setTxHash] = useState('')
   const [walletAddress, setWalletAddress] = useState<`0x${string}` | ''>('')
+  const [providerChainId, setProviderChainId] = useState<number | null>(null)
   const [balances, setBalances] = useState<BalanceResponse>({
     usdcBalance: '0.00',
     boxBalance: '0.0000',
@@ -79,7 +141,16 @@ const Home: NextPage = () => {
   const [message, setMessage] = useState('')
   const onSelectLocale = useCallback((e) => setLocale(e.target.value), [])
 
+  const isSepoliaMode = networkMode === 'sepolia'
+  const activeChain = isSepoliaMode ? APP_CHAIN : mainnet
+  const activeChainId = isSepoliaMode ? CHAIN_ID : mainnet.id
+  const activeExplorerTxUrl = isSepoliaMode ? EXPLORER_TX_URL : 'https://etherscan.io/tx/'
   const selectedToken = gasToken === 'ETH' ? null : tokenConfig[gasToken]
+  const widgetSupportsConnectedChain =
+    networkMode === 'mainnet' && providerChainId !== null && WIDGET_SUPPORTED_CHAIN_IDS.has(providerChainId)
+  const widgetProvider = widgetSupportsConnectedChain ? provider : undefined
+  const showWidgetFallbackNotice = networkMode === 'mainnet' && providerChainId !== null && !widgetSupportsConnectedChain
+  const shouldLoadBalances = isSepoliaMode && Boolean(walletAddress)
 
   const refreshBalances = useCallback(
     async (address?: string) => {
@@ -131,19 +202,22 @@ const Home: NextPage = () => {
       if (!provider) {
         if (!cancelled) {
           setWalletAddress('')
+          setProviderChainId(null)
         }
         return
       }
 
       try {
-        const signerAddress = await provider.getSigner().getAddress()
+        const [signerAddress, network] = await Promise.all([provider.getSigner().getAddress(), provider.getNetwork()])
 
         if (!cancelled) {
           setWalletAddress(signerAddress as `0x${string}`)
+          setProviderChainId(network.chainId)
         }
       } catch {
         if (!cancelled) {
           setWalletAddress('')
+          setProviderChainId(null)
         }
       }
     }
@@ -160,6 +234,10 @@ const Home: NextPage = () => {
       return
     }
 
+    if (!isSepoliaMode) {
+      return
+    }
+
     refreshBalances(walletAddress).catch((error) => {
       setMessage(error.message)
     })
@@ -169,9 +247,14 @@ const Home: NextPage = () => {
     }, 5_000)
 
     return () => window.clearInterval(timer)
-  }, [refreshBalances, walletAddress])
+  }, [isSepoliaMode, refreshBalances, walletAddress])
 
   const onClaimUsdc = useCallback(async () => {
+    if (!isSepoliaMode) {
+      setMessage('Faucet 仅在 Sepolia 测试网开放')
+      return
+    }
+
     if (!walletAddress) {
       setMessage('Please connect MetaMask first')
       return
@@ -186,12 +269,11 @@ const Home: NextPage = () => {
     setMessage('')
 
     try {
-      const response = await fetch('/api/faucet', {
+      const { response, data } = await fetchJsonWithTimeout('/api/faucet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userAddress: walletAddress }),
       })
-      const data = await response.json()
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to claim faucet')
@@ -204,9 +286,14 @@ const Home: NextPage = () => {
     } finally {
       setClaiming(false)
     }
-  }, [refreshBalances, walletAddress])
+  }, [isSepoliaMode, refreshBalances, walletAddress])
 
   const onDeposit = useCallback(async () => {
+    if (!isSepoliaMode) {
+      setMessage('充值 Gas Pool 仅在 Sepolia 测试网开放')
+      return
+    }
+
     if (!walletAddress || !selectedToken?.address || !vaultAddress) {
       setMessage('Missing wallet or vault configuration')
       return
@@ -244,9 +331,14 @@ const Home: NextPage = () => {
     } finally {
       setDepositing(false)
     }
-  }, [getWalletClient, refreshBalances, selectedToken, walletAddress])
+  }, [getWalletClient, isSepoliaMode, refreshBalances, selectedToken, walletAddress])
 
   const onGaslessMint = useCallback(async () => {
+    if (!isSepoliaMode) {
+      setMessage('Gasless Mint 仅在 Sepolia 测试网开放')
+      return
+    }
+
     if (!walletAddress || !selectedToken?.address) {
       setMessage('Please connect wallet and choose USDC or BOX')
       return
@@ -262,7 +354,7 @@ const Home: NextPage = () => {
     setMessage('')
 
     try {
-      const response = await fetch('/api/relay', {
+      const { response, data } = await fetchJsonWithTimeout('/api/relay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -270,7 +362,6 @@ const Home: NextPage = () => {
           feeToken: selectedToken.address,
         }),
       })
-      const data = await response.json()
 
       if (!response.ok) {
         throw new Error(data.error || 'Relay failed')
@@ -284,7 +375,7 @@ const Home: NextPage = () => {
     } finally {
       setLoading(false)
     }
-  }, [refreshBalances, selectedToken, walletAddress])
+  }, [isSepoliaMode, refreshBalances, selectedToken, walletAddress])
 
   return (
     <div className={styles.container}>
@@ -317,6 +408,35 @@ const Home: NextPage = () => {
 
           <div className={omniGasStyles.widgetColumn}>
             <div className={omniGasStyles.card}>
+              <div className={omniGasStyles.sectionHeader}>
+                <div className={omniGasStyles.cardTitle}>网络模式</div>
+                <div className={omniGasStyles.modeBadge}>{isSepoliaMode ? 'Testing' : 'Mainnet'}</div>
+              </div>
+              <div className={omniGasStyles.buttonRow}>
+                {NETWORK_MODES.map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={[
+                      omniGasStyles.tokenButton,
+                      networkMode === mode ? omniGasStyles.tokenButtonActive : '',
+                    ].join(' ')}
+                    onClick={() => {
+                      setNetworkMode(mode)
+                      setMessage('')
+                      setTxHash('')
+                    }}
+                  >
+                    {mode === 'sepolia' ? 'Sepolia' : 'Mainnet'}
+                  </button>
+                ))}
+              </div>
+              <p className={omniGasStyles.helperText}>
+                当前模式：{activeChain.name}（Chain ID {activeChainId}）
+              </p>
+            </div>
+
+            <div className={omniGasStyles.card}>
               <div className={omniGasStyles.cardTitle}>Gas 支付方式</div>
               <div className={omniGasStyles.buttonRow}>
                 {GAS_TOKENS.map((token) => (
@@ -333,21 +453,25 @@ const Home: NextPage = () => {
                   </button>
                 ))}
               </div>
-              {gasToken !== 'ETH' ? (
+              {!isSepoliaMode ? (
+                <p className={omniGasStyles.helperText}>
+                  当前 Mainnet 模式仅展示 SwapWidget。OmniGas 的 Faucet、充值和 Gasless Mint 仍部署在 Sepolia。
+                </p>
+              ) : gasToken !== 'ETH' ? (
                 <>
                   <p className={omniGasStyles.helperText}>您无需持有 ETH，Gas 费将由 OmniGas 预付池代扣</p>
                   <div className={omniGasStyles.balancePanel}>
                     <div className={omniGasStyles.balanceRow}>
                       <span>Vault USDC</span>
-                      <strong>{balances.usdcBalance}</strong>
+                      <strong>{shouldLoadBalances ? balances.usdcBalance : '--'}</strong>
                     </div>
                     <div className={omniGasStyles.balanceRow}>
                       <span>Vault BOX</span>
-                      <strong>{balances.boxBalance}</strong>
+                      <strong>{shouldLoadBalances ? balances.boxBalance : '--'}</strong>
                     </div>
                     <div className={omniGasStyles.balanceRow}>
                       <span>NFT Count</span>
-                      <strong>{balances.nftCount}</strong>
+                      <strong>{shouldLoadBalances ? balances.nftCount : '--'}</strong>
                     </div>
                   </div>
                   <button
@@ -378,11 +502,11 @@ const Home: NextPage = () => {
                   {txHash ? (
                     <a
                       className={omniGasStyles.successLink}
-                      href={`${EXPLORER_TX_URL}${txHash}`}
+                      href={`${activeExplorerTxUrl}${txHash}`}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      交易成功：{EXPLORER_TX_URL}{txHash}
+                      交易成功：{activeExplorerTxUrl}{txHash}
                     </a>
                   ) : null}
                 </>
@@ -390,10 +514,16 @@ const Home: NextPage = () => {
             </div>
 
             <div className={styles.widget}>
+              {showWidgetFallbackNotice ? (
+                <div className={omniGasStyles.widgetNotice}>
+                  当前钱包链 ID 为 {providerChainId}。当前项目固定使用的 `@uniswap/widgets` v1 不支持这条链，因此
+                  Swap Widget 会保持为以太坊主网只读模式。
+                </div>
+              ) : null}
               <SwapWidget
                 jsonRpcEndpoint={JSON_RPC_URL}
-                tokenList={TOKEN_LIST}
-                provider={provider}
+                tokenList={WIDGET_TOKENS}
+                provider={widgetProvider}
                 locale={locale}
                 onConnectWallet={focusConnectors}
                 defaultInputTokenAddress="NATIVE"

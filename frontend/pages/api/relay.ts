@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { createPublicClient, createWalletClient, http, parseAbi } from 'viem'
+import { createPublicClient, createWalletClient, parseAbi } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { sepolia } from 'viem/chains'
+import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../../lib/rpc'
 
 const EXECUTOR_ABI = parseAbi(['function gaslessMint(address user, address feeToken) external'])
 
@@ -11,14 +12,14 @@ const chain = sepolia
 
 const publicClient = createPublicClient({
   chain,
-  transport: http(rpcUrl),
+  transport: createFallbackTransport(SEPOLIA_RPC_URLS),
 })
 
 const walletClient = relayerKey
   ? createWalletClient({
       account: privateKeyToAccount(relayerKey),
       chain,
-      transport: http(rpcUrl),
+      transport: createFallbackTransport(SEPOLIA_RPC_URLS),
     })
   : null
 
