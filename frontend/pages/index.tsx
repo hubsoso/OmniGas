@@ -550,9 +550,8 @@ const WalletHome: NextPage = () => {
 
       {/* 全能服务费 — 代币列表 */}
       {showOmnigas && omnigasStep === 'list' && (
-        <div className={styles.overlay} onClick={() => setShowOmnigas(false)}>
-          <div className={styles.omnigasSheet} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.sheetHandle} />
+        <div className={styles.overlayCenter} onClick={() => setShowOmnigas(false)}>
+          <div className={styles.omnigasSheetCenter} onClick={(e) => e.stopPropagation()}>
             <div className={styles.omnigasHeader}>
               <h3 className={styles.omnigasTitle}>充值代币</h3>
               <button className={styles.testClose} onClick={() => setShowOmnigas(false)}>✕</button>
