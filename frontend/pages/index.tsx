@@ -1,84 +1,41 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import { FiGlobe } from 'react-icons/fi'
-import { SupportedLocale, SUPPORTED_LOCALES, SwapWidget } from '@uniswap/widgets'
-import type { TokenInfo } from '@uniswap/widgets'
 import { createPublicClient, createWalletClient, custom, parseAbi } from 'viem'
-import { mainnet, sepolia } from 'viem/chains'
-
-import '@uniswap/widgets/fonts.css'
-
-import styles from '../styles/Home.module.css'
-import omniGasStyles from '../styles/OmniGas.module.css'
-import DocumentationCards from '../components/DocumentationCards'
-import Web3Connectors from '../components/Web3Connectors'
+import { sepolia, mainnet } from 'viem/chains'
+import { useCallback, useEffect, useState } from 'react'
 import { useActiveProvider } from '../connectors'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { JSON_RPC_URL } from '../constants'
 import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../lib/rpc'
+import styles from '../styles/Wallet.module.css'
 
-const UNI = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
-const USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
-const WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+// ── 常量 ────────────────────────────────────────────
+const AVATAR_COLORS = ['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6']
+
 const GAS_TOKENS = ['ETH', 'USDC', 'BOX'] as const
-const ERC20_ABI = parseAbi(['function approve(address spender, uint256 amount) external returns (bool)'])
-const VAULT_ABI = parseAbi(['function deposit(address token, uint256 amount) external'])
-const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 11155111)
-const APP_CHAIN = sepolia
-const EXPLORER_TX_URL = 'https://sepolia.etherscan.io/tx/'
-const publicClient = createPublicClient({
-  chain: APP_CHAIN,
-  transport: createFallbackTransport(SEPOLIA_RPC_URLS),
-})
-const WIDGET_SUPPORTED_CHAIN_IDS = new Set([1, 3, 4, 5, 10, 42, 69, 137, 80001, 42161, 421611])
-const API_REQUEST_TIMEOUT_MS = 15_000
-const WIDGET_TOKENS: TokenInfo[] = [
-  {
-    chainId: 1,
-    address: WETH,
-    name: 'Wrapped Ether',
-    symbol: 'WETH',
-    decimals: 18,
-  },
-  {
-    chainId: 1,
-    address: USDC,
-    name: 'USD Coin',
-    symbol: 'USDC',
-    decimals: 6,
-  },
-  {
-    chainId: 1,
-    address: UNI,
-    name: 'Uniswap',
-    symbol: 'UNI',
-    decimals: 18,
-  },
-]
-const NETWORK_MODES = ['sepolia', 'mainnet'] as const
-
-type NetworkMode = (typeof NETWORK_MODES)[number]
-
 type GasToken = (typeof GAS_TOKENS)[number]
 
-type BalanceResponse = {
-  usdcBalance: string
-  boxBalance: string
-  nftCount: string
-}
+const NETWORK_MODES = ['sepolia', 'mainnet'] as const
+type NetworkMode = (typeof NETWORK_MODES)[number]
 
-const tokenConfig: Record<Exclude<GasToken, 'ETH'>, { address?: `0x${string}`; amount: bigint; label: string }> = {
+const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 11155111)
+const APP_CHAIN = sepolia
+const EXPLORER_TX = 'https://sepolia.etherscan.io/tx/'
+const API_TIMEOUT = 15_000
+
+const ERC20_ABI = parseAbi(['function approve(address spender, uint256 amount) external returns (bool)'])
+const VAULT_ABI = parseAbi(['function deposit(address token, uint256 amount) external'])
+
+const tokenConfig = {
   USDC: {
     address: process.env.NEXT_PUBLIC_USDC_ADDRESS as `0x${string}` | undefined,
-    amount: 10000000n,
+    amount: 10_000_000n,
     label: '10 USDC',
   },
   BOX: {
     address: process.env.NEXT_PUBLIC_BOX_ADDRESS as `0x${string}` | undefined,
-    amount: 10000000000000000000n,
+    amount: 10_000_000_000_000_000_000n,
     label: '10 BOX',
   },
-}
+} as const
 
 const vaultAddress = process.env.NEXT_PUBLIC_VAULT_ADDRESS as `0x${string}` | undefined
 const hasRelayConfig = Boolean(
@@ -89,457 +46,392 @@ const hasRelayConfig = Boolean(
     process.env.NEXT_PUBLIC_EXECUTOR_ADDRESS
 )
 
-async function fetchJsonWithTimeout(input: RequestInfo, init?: RequestInit, timeoutMs = API_REQUEST_TIMEOUT_MS) {
-  const controller = new AbortController()
-  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+const publicClient = createPublicClient({
+  chain: APP_CHAIN,
+  transport: createFallbackTransport(SEPOLIA_RPC_URLS),
+})
 
+// ── 工具函数 ─────────────────────────────────────────
+function getAvatarColor(address: string) {
+  return AVATAR_COLORS[parseInt(address.slice(2, 4), 16) % AVATAR_COLORS.length]
+}
+
+function shortAddr(address: string) {
+  return address.slice(0, 10)
+}
+
+async function fetchWithTimeout(input: RequestInfo, init?: RequestInit) {
+  const ctrl = new AbortController()
+  const timer = window.setTimeout(() => ctrl.abort(), API_TIMEOUT)
   try {
-    const response = await fetch(input, {
-      ...init,
-      signal: controller.signal,
-    })
-
+    const res = await fetch(input, { ...init, signal: ctrl.signal })
     let data: any = null
-
-    try {
-      data = await response.json()
-    } catch {
-      data = null
-    }
-
-    return { response, data }
-  } catch (error: any) {
-    if (error?.name === 'AbortError') {
-      throw new Error(`请求超时，已等待 ${(timeoutMs / 1000).toFixed(0)} 秒`)
-    }
-
-    throw error
+    try { data = await res.json() } catch {}
+    return { response: res, data }
+  } catch (e: any) {
+    if (e?.name === 'AbortError') throw new Error('请求超时')
+    throw e
   } finally {
     window.clearTimeout(timer)
   }
 }
 
-const Home: NextPage = () => {
-  const connectors = useRef<HTMLDivElement>(null)
-  const focusConnectors = useCallback(() => connectors.current?.focus(), [])
+declare global {
+  interface Window { ethereum?: any }
+}
+
+type PendingAction = 'omnigas' | 'transfer' | 'swap' | ''
+
+// ── 组件 ─────────────────────────────────────────────
+const WalletHome: NextPage = () => {
   const provider = useActiveProvider()
 
+  // 钱包账户
+  const [accounts, setAccounts] = useState<string[]>([])
+  const [current, setCurrent] = useState<string>('')
+  const [showLogin, setShowLogin] = useState(false)
+  const [showSwitcher, setShowSwitcher] = useState(false)
+  const [pendingAction, setPendingAction] = useState<PendingAction>('')
+
+  // 测试面板
+  const [showTest, setShowTest] = useState(false)
   const [networkMode, setNetworkMode] = useState<NetworkMode>('sepolia')
-  const [locale, setLocale] = useState<SupportedLocale>('en-US')
-  const [gasToken, setGasToken] = useState<GasToken>('ETH')
-  const [txHash, setTxHash] = useState('')
-  const [walletAddress, setWalletAddress] = useState<`0x${string}` | ''>('')
-  const [providerChainId, setProviderChainId] = useState<number | null>(null)
-  const [balances, setBalances] = useState<BalanceResponse>({
-    usdcBalance: '0.00',
-    boxBalance: '0.0000',
-    nftCount: '0',
-  })
-  const [loading, setLoading] = useState(false)
-  const [depositing, setDepositing] = useState(false)
+  const [gasToken, setGasToken] = useState<GasToken>('USDC')
+  const [balances, setBalances] = useState({ usdcBalance: '--', boxBalance: '--', nftCount: '--' })
   const [claiming, setClaiming] = useState(false)
-  const [message, setMessage] = useState('')
-  const onSelectLocale = useCallback((e) => setLocale(e.target.value), [])
+  const [depositing, setDepositing] = useState(false)
+  const [minting, setMinting] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [txHash, setTxHash] = useState('')
 
   const isSepoliaMode = networkMode === 'sepolia'
-  const activeChain = isSepoliaMode ? APP_CHAIN : mainnet
-  const activeChainId = isSepoliaMode ? CHAIN_ID : mainnet.id
-  const activeExplorerTxUrl = isSepoliaMode ? EXPLORER_TX_URL : 'https://etherscan.io/tx/'
   const selectedToken = gasToken === 'ETH' ? null : tokenConfig[gasToken]
-  const widgetSupportsConnectedChain =
-    networkMode === 'mainnet' && providerChainId !== null && WIDGET_SUPPORTED_CHAIN_IDS.has(providerChainId)
-  const widgetProvider = widgetSupportsConnectedChain ? provider : undefined
-  const showWidgetFallbackNotice = networkMode === 'mainnet' && providerChainId !== null && !widgetSupportsConnectedChain
-  const shouldLoadBalances = isSepoliaMode && Boolean(walletAddress)
 
-  const refreshBalances = useCallback(
-    async (address?: string) => {
-      const targetAddress = address || walletAddress
+  // ── 账户初始化 ───────────────────────────────────────
+  useEffect(() => {
+    if (!window.ethereum) return
+    window.ethereum.request({ method: 'eth_accounts' }).then((accs: string[]) => {
+      if (accs.length > 0) { setAccounts(accs); setCurrent(accs[0]) }
+    }).catch(() => {})
+  }, [])
 
-      if (!targetAddress) {
-        return
-      }
+  useEffect(() => {
+    if (!window.ethereum) return
+    const handler = (accs: string[]) => { setAccounts(accs); setCurrent(accs[0] || '') }
+    window.ethereum.on('accountsChanged', handler)
+    return () => window.ethereum.removeListener?.('accountsChanged', handler)
+  }, [])
 
-      const response = await fetch(`/api/balance?address=${targetAddress}`)
-      const data = await response.json()
+  const connectWallet = useCallback(async () => {
+    if (!window.ethereum) { alert('请先安装 MetaMask'); return }
+    try {
+      const accs: string[] = await window.ethereum.request({ method: 'eth_requestAccounts' })
+      setAccounts(accs); setCurrent(accs[0])
+      setShowLogin(false); setShowSwitcher(false)
+    } catch {}
+  }, [])
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to load balances')
-      }
+  const handleAction = useCallback((action: PendingAction) => {
+    if (!current) { setPendingAction(action); setShowLogin(true); return }
+    if (action === 'swap') window.location.href = '/swap'
+  }, [current])
 
-      setBalances(data)
-    },
-    [walletAddress]
-  )
+  // ── 测试面板逻辑 ─────────────────────────────────────
+  const refreshBalances = useCallback(async (address?: string) => {
+    const addr = address || current
+    if (!addr || !isSepoliaMode) return
+    try {
+      const res = await fetch(`/api/balance?address=${addr}`)
+      const data = await res.json()
+      if (res.ok) setBalances(data)
+    } catch {}
+  }, [current, isSepoliaMode])
+
+  useEffect(() => {
+    if (!current || !isSepoliaMode || !showTest) return
+    refreshBalances(current)
+    const timer = window.setInterval(() => refreshBalances(current), 5000)
+    return () => window.clearInterval(timer)
+  }, [current, isSepoliaMode, showTest, refreshBalances])
 
   const getWalletClient = useCallback(async () => {
-    if (!provider) {
-      throw new Error('Please connect MetaMask first')
-    }
-
+    if (!provider) throw new Error('请先连接 MetaMask')
     const network = await provider.getNetwork()
-
-    if (network.chainId !== CHAIN_ID) {
-      throw new Error(`Please switch MetaMask to ${APP_CHAIN.name} (${CHAIN_ID})`)
-    }
-
+    if (network.chainId !== CHAIN_ID) throw new Error(`请切换到 Sepolia (${CHAIN_ID})`)
     const externalProvider = (provider as any).provider
-
-    if (!externalProvider) {
-      throw new Error('Wallet provider unavailable')
-    }
-
-    return createWalletClient({
-      chain: APP_CHAIN,
-      transport: custom(externalProvider),
-    })
+    if (!externalProvider) throw new Error('Wallet provider unavailable')
+    return createWalletClient({ chain: APP_CHAIN, transport: custom(externalProvider) })
   }, [provider])
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function syncWallet() {
-      if (!provider) {
-        if (!cancelled) {
-          setWalletAddress('')
-          setProviderChainId(null)
-        }
-        return
-      }
-
-      try {
-        const [signerAddress, network] = await Promise.all([provider.getSigner().getAddress(), provider.getNetwork()])
-
-        if (!cancelled) {
-          setWalletAddress(signerAddress as `0x${string}`)
-          setProviderChainId(network.chainId)
-        }
-      } catch {
-        if (!cancelled) {
-          setWalletAddress('')
-          setProviderChainId(null)
-        }
-      }
-    }
-
-    syncWallet()
-
-    return () => {
-      cancelled = true
-    }
-  }, [provider])
-
-  useEffect(() => {
-    if (!walletAddress) {
-      return
-    }
-
-    if (!isSepoliaMode) {
-      return
-    }
-
-    refreshBalances(walletAddress).catch((error) => {
-      setMessage(error.message)
-    })
-
-    const timer = window.setInterval(() => {
-      refreshBalances(walletAddress).catch(() => {})
-    }, 5_000)
-
-    return () => window.clearInterval(timer)
-  }, [isSepoliaMode, refreshBalances, walletAddress])
-
-  const onClaimUsdc = useCallback(async () => {
-    if (!isSepoliaMode) {
-      setMessage('Faucet 仅在 Sepolia 测试网开放')
-      return
-    }
-
-    if (!walletAddress) {
-      setMessage('Please connect MetaMask first')
-      return
-    }
-
-    if (!hasRelayConfig) {
-      setMessage('Missing Relay contract addresses in frontend/.env.local')
-      return
-    }
-
-    setClaiming(true)
-    setMessage('')
-
+  const onClaim = useCallback(async () => {
+    if (!current) { setMsg('请先连接钱包'); return }
+    setClaiming(true); setMsg(''); setTxHash('')
     try {
-      const { response, data } = await fetchJsonWithTimeout('/api/faucet', {
+      const { response, data } = await fetchWithTimeout('/api/faucet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userAddress: walletAddress }),
+        body: JSON.stringify({ userAddress: current }),
       })
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to claim faucet')
-      }
-
-      setMessage(`USDC faucet sent: ${data.txHash}`)
-      refreshBalances(walletAddress).catch(() => {})
-    } catch (error: any) {
-      setMessage(error.message || 'Failed to claim faucet')
+      if (!response.ok) throw new Error(data?.error || 'Faucet 失败')
+      setMsg(`已领取 USDC`)
+      setTxHash(data.txHash)
+      refreshBalances(current)
+    } catch (e: any) {
+      setMsg(e.message || 'Faucet 失败')
     } finally {
       setClaiming(false)
     }
-  }, [isSepoliaMode, refreshBalances, walletAddress])
+  }, [current, refreshBalances])
 
   const onDeposit = useCallback(async () => {
-    if (!isSepoliaMode) {
-      setMessage('充值 Gas Pool 仅在 Sepolia 测试网开放')
-      return
+    if (!current || !selectedToken?.address || !vaultAddress) {
+      setMsg('缺少钱包或合约配置'); return
     }
-
-    if (!walletAddress || !selectedToken?.address || !vaultAddress) {
-      setMessage('Missing wallet or vault configuration')
-      return
-    }
-
-    setDepositing(true)
-    setMessage('')
-
+    setDepositing(true); setMsg(''); setTxHash('')
     try {
-      const walletClient = await getWalletClient()
-
-      const approveHash = await walletClient.writeContract({
-        account: walletAddress,
+      const wc = await getWalletClient()
+      const approveHash = await wc.writeContract({
+        account: current as `0x${string}`,
         address: selectedToken.address,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [vaultAddress, selectedToken.amount],
       })
-
       await publicClient.waitForTransactionReceipt({ hash: approveHash })
-
-      const depositHash = await walletClient.writeContract({
-        account: walletAddress,
+      const depositHash = await wc.writeContract({
+        account: current as `0x${string}`,
         address: vaultAddress,
         abi: VAULT_ABI,
         functionName: 'deposit',
         args: [selectedToken.address, selectedToken.amount],
       })
-
       await publicClient.waitForTransactionReceipt({ hash: depositHash })
-      setMessage(`Deposit success: ${depositHash}`)
-      await refreshBalances(walletAddress)
-    } catch (error: any) {
-      setMessage(error.shortMessage || error.message || 'Deposit failed')
+      setMsg('充值成功')
+      setTxHash(depositHash)
+      await refreshBalances(current)
+    } catch (e: any) {
+      setMsg(e.shortMessage || e.message || '充值失败')
     } finally {
       setDepositing(false)
     }
-  }, [getWalletClient, isSepoliaMode, refreshBalances, selectedToken, walletAddress])
+  }, [current, getWalletClient, refreshBalances, selectedToken])
 
-  const onGaslessMint = useCallback(async () => {
-    if (!isSepoliaMode) {
-      setMessage('Gasless Mint 仅在 Sepolia 测试网开放')
-      return
-    }
-
-    if (!walletAddress || !selectedToken?.address) {
-      setMessage('Please connect wallet and choose USDC or BOX')
-      return
-    }
-
-    if (!hasRelayConfig) {
-      setMessage('Missing Relay contract addresses in frontend/.env.local')
-      return
-    }
-
-    setLoading(true)
-    setTxHash('')
-    setMessage('')
-
+  const onMint = useCallback(async () => {
+    if (!current || !selectedToken?.address) { setMsg('请选择 USDC 或 BOX'); return }
+    setMinting(true); setMsg(''); setTxHash('')
     try {
-      const { response, data } = await fetchJsonWithTimeout('/api/relay', {
+      const { response, data } = await fetchWithTimeout('/api/relay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userAddress: walletAddress,
-          feeToken: selectedToken.address,
-        }),
+        body: JSON.stringify({ userAddress: current, feeToken: selectedToken.address }),
       })
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Relay failed')
-      }
-
+      if (!response.ok) throw new Error(data?.error || 'Relay 失败')
+      setMsg('Gasless Mint 成功')
       setTxHash(data.txHash)
-      setMessage(`Gasless mint sent: ${data.txHash}`)
-      await refreshBalances(walletAddress)
-    } catch (error: any) {
-      setMessage(error.message || 'Gasless mint failed')
+      await refreshBalances(current)
+    } catch (e: any) {
+      setMsg(e.message || 'Mint 失败')
     } finally {
-      setLoading(false)
+      setMinting(false)
     }
-  }, [isSepoliaMode, refreshBalances, selectedToken, walletAddress])
+  }, [current, refreshBalances, selectedToken])
 
+  // ── JSX ──────────────────────────────────────────────
   return (
-    <div className={styles.container}>
+    <div className={styles.phone}>
       <Head>
-        <title>Uniswap Widgets</title>
-        <meta name="description" content="Uniswap Widgets" />
-        <link rel="icon" href="https://app.uniswap.org/favicon.png" />
+        <title>OmniGas Wallet</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </Head>
 
-      <div className={styles.i18n}>
-        <label style={{ display: 'flex' }}>
-          <FiGlobe />
-        </label>
-        <select onChange={onSelectLocale}>
-          {SUPPORTED_LOCALES.map((locale) => (
-            <option key={locale} value={locale}>
-              {locale}
-            </option>
-          ))}
-        </select>
+      {/* 顶部状态栏 */}
+      <div className={styles.statusBar}>
+        {current ? (
+          <button className={styles.accountBtn} onClick={() => setShowSwitcher(true)}>
+            <div className={styles.avatar} style={{ background: getAvatarColor(current) }}>
+              {current.slice(2, 4).toUpperCase()}
+            </div>
+            <span className={styles.addrText}>{shortAddr(current)}</span>
+            <span className={styles.chevron}>▾</span>
+          </button>
+        ) : (
+          <span className={styles.notConnected}>未连接</span>
+        )}
       </div>
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>Uniswap Swap Widget</h1>
+      {/* 余额卡片 */}
+      <div className={styles.balanceCard}>
+        <div className={styles.balanceLabel}>总资产</div>
+        <div className={styles.balanceAmount}>$0.00</div>
+        <div className={styles.networkBadge}>
+          <span className={styles.networkDot} />
+          Sepolia Testnet
+        </div>
+      </div>
 
-        <div className={styles.demo}>
-          <div className={styles.connectors} ref={connectors} tabIndex={-1}>
-            <Web3Connectors />
+      {/* 三个功能按钮 */}
+      <div className={styles.actions}>
+        <button className={styles.actionCard} onClick={() => handleAction('omnigas')}>
+          <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>⛽</div>
+          <span className={styles.actionLabel}>万能Gas</span>
+        </button>
+        <button className={styles.actionCard} onClick={() => handleAction('transfer')}>
+          <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #10B981, #3B82F6)' }}>↗</div>
+          <span className={styles.actionLabel}>转账</span>
+        </button>
+        <button className={styles.actionCard} onClick={() => handleAction('swap')}>
+          <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #F59E0B, #EF4444)' }}>⇄</div>
+          <span className={styles.actionLabel}>Swap</span>
+        </button>
+      </div>
+
+      {/* 右下角测试入口 */}
+      <button className={styles.testFab} onClick={() => { setShowTest(true); setMsg(''); setTxHash('') }}>
+        🧪
+      </button>
+
+      {/* 登录弹窗 */}
+      {showLogin && (
+        <div className={styles.overlay} onClick={() => setShowLogin(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalEmoji}>🔐</div>
+            <h2 className={styles.modalTitle}>连接钱包</h2>
+            <p className={styles.modalDesc}>
+              使用{{ omnigas: '万能Gas', transfer: '转账', swap: 'Swap' }[pendingAction] || ''}功能前，请先连接你的钱包
+            </p>
+            <button className={styles.connectBtn} onClick={connectWallet}>MetaMask 连接</button>
+            <button className={styles.cancelBtn} onClick={() => setShowLogin(false)}>取消</button>
           </div>
+        </div>
+      )}
 
-          <div className={omniGasStyles.widgetColumn}>
-            <div className={omniGasStyles.card}>
-              <div className={omniGasStyles.sectionHeader}>
-                <div className={omniGasStyles.cardTitle}>网络模式</div>
-                <div className={omniGasStyles.modeBadge}>{isSepoliaMode ? 'Testing' : 'Mainnet'}</div>
-              </div>
-              <div className={omniGasStyles.buttonRow}>
-                {NETWORK_MODES.map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    className={[
-                      omniGasStyles.tokenButton,
-                      networkMode === mode ? omniGasStyles.tokenButtonActive : '',
-                    ].join(' ')}
-                    onClick={() => {
-                      setNetworkMode(mode)
-                      setMessage('')
-                      setTxHash('')
-                    }}
-                  >
-                    {mode === 'sepolia' ? 'Sepolia' : 'Mainnet'}
-                  </button>
-                ))}
-              </div>
-              <p className={omniGasStyles.helperText}>
-                当前模式：{activeChain.name}（Chain ID {activeChainId}）
-              </p>
+      {/* 账户切换底部弹出 */}
+      {showSwitcher && (
+        <div className={styles.overlay} onClick={() => setShowSwitcher(false)}>
+          <div className={styles.bottomSheet} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.sheetHandle} />
+            <h3 className={styles.sheetTitle}>切换账户</h3>
+            {accounts.map((acc) => (
+              <button
+                key={acc}
+                className={[styles.accountItem, acc === current ? styles.accountItemActive : ''].join(' ')}
+                onClick={() => { setCurrent(acc); setShowSwitcher(false) }}
+              >
+                <div className={styles.accountAvatar} style={{ background: getAvatarColor(acc) }}>
+                  {acc.slice(2, 4).toUpperCase()}
+                </div>
+                <div className={styles.accountInfo}>
+                  <span className={styles.accountAddr}>{shortAddr(acc)}</span>
+                  {acc === current && <span className={styles.accountBadge}>当前</span>}
+                </div>
+              </button>
+            ))}
+            <button className={styles.addAccountBtn} onClick={connectWallet}>+ 添加 / 切换账户</button>
+          </div>
+        </div>
+      )}
+
+      {/* 测试面板底部弹出 */}
+      {showTest && (
+        <div className={styles.overlay} onClick={() => setShowTest(false)}>
+          <div className={styles.testSheet} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.sheetHandle} />
+            <div className={styles.testHeader}>
+              <h3 className={styles.sheetTitle}>🧪 测试面板</h3>
+              <button className={styles.testClose} onClick={() => setShowTest(false)}>✕</button>
             </div>
 
-            <div className={omniGasStyles.card}>
-              <div className={omniGasStyles.cardTitle}>Gas 支付方式</div>
-              <div className={omniGasStyles.buttonRow}>
-                {GAS_TOKENS.map((token) => (
+            {/* 网络切换 */}
+            <div className={styles.testSection}>
+              <div className={styles.testLabel}>网络模式</div>
+              <div className={styles.testRow}>
+                {NETWORK_MODES.map((m) => (
                   <button
-                    key={token}
-                    type="button"
-                    className={[
-                      omniGasStyles.tokenButton,
-                      gasToken === token ? omniGasStyles.tokenButtonActive : '',
-                    ].join(' ')}
-                    onClick={() => setGasToken(token)}
+                    key={m}
+                    className={[styles.testChip, networkMode === m ? styles.testChipActive : ''].join(' ')}
+                    onClick={() => { setNetworkMode(m); setMsg('') }}
                   >
-                    {token}
+                    {m === 'sepolia' ? 'Sepolia' : 'Mainnet'}
                   </button>
                 ))}
               </div>
-              {!isSepoliaMode ? (
-                <p className={omniGasStyles.helperText}>
-                  当前 Mainnet 模式仅展示 SwapWidget。OmniGas 的 Faucet、充值和 Gasless Mint 仍部署在 Sepolia。
-                </p>
-              ) : gasToken !== 'ETH' ? (
-                <>
-                  <p className={omniGasStyles.helperText}>您无需持有 ETH，Gas 费将由 OmniGas 预付池代扣</p>
-                  <div className={omniGasStyles.balancePanel}>
-                    <div className={omniGasStyles.balanceRow}>
-                      <span>Vault USDC</span>
-                      <strong>{shouldLoadBalances ? balances.usdcBalance : '--'}</strong>
-                    </div>
-                    <div className={omniGasStyles.balanceRow}>
-                      <span>Vault BOX</span>
-                      <strong>{shouldLoadBalances ? balances.boxBalance : '--'}</strong>
-                    </div>
-                    <div className={omniGasStyles.balanceRow}>
-                      <span>NFT Count</span>
-                      <strong>{shouldLoadBalances ? balances.nftCount : '--'}</strong>
-                    </div>
-                  </div>
+            </div>
+
+            {/* Gas Token 选择 */}
+            <div className={styles.testSection}>
+              <div className={styles.testLabel}>Gas Token</div>
+              <div className={styles.testRow}>
+                {GAS_TOKENS.map((t) => (
                   <button
-                    type="button"
-                    className={omniGasStyles.secondaryButton}
-                    onClick={onClaimUsdc}
-                    disabled={claiming || !walletAddress || !hasRelayConfig}
+                    key={t}
+                    className={[styles.testChip, gasToken === t ? styles.testChipActive : ''].join(' ')}
+                    onClick={() => setGasToken(t)}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Vault 余额 */}
+            {isSepoliaMode && current && (
+              <div className={styles.testSection}>
+                <div className={styles.testLabel}>Vault 余额</div>
+                <div className={styles.testBalances}>
+                  <div className={styles.testBalRow}><span>USDC</span><strong>{balances.usdcBalance}</strong></div>
+                  <div className={styles.testBalRow}><span>BOX</span><strong>{balances.boxBalance}</strong></div>
+                  <div className={styles.testBalRow}><span>NFT</span><strong>{balances.nftCount}</strong></div>
+                </div>
+              </div>
+            )}
+
+            {/* 操作按钮 */}
+            {isSepoliaMode && (
+              <div className={styles.testSection}>
+                <div className={styles.testLabel}>操作</div>
+                <div className={styles.testActions}>
+                  <button
+                    className={styles.testBtn}
+                    onClick={onClaim}
+                    disabled={claiming || !current || !hasRelayConfig}
                   >
                     {claiming ? '领取中...' : '领取测试 USDC'}
                   </button>
                   <button
-                    type="button"
-                    className={omniGasStyles.secondaryButton}
+                    className={styles.testBtn}
                     onClick={onDeposit}
-                    disabled={depositing || !walletAddress || !selectedToken?.address || !vaultAddress}
+                    disabled={depositing || !current || !selectedToken?.address || gasToken === 'ETH'}
                   >
-                    {depositing ? '充值中...' : `充值 ${selectedToken?.label || ''}`}
+                    {depositing ? '充值中...' : `充值 ${selectedToken?.label || '—'}`}
                   </button>
                   <button
-                    type="button"
-                    className={omniGasStyles.actionButton}
-                    onClick={onGaslessMint}
-                    disabled={loading || !walletAddress || !selectedToken?.address || !hasRelayConfig}
+                    className={[styles.testBtn, styles.testBtnPrimary].join(' ')}
+                    onClick={onMint}
+                    disabled={minting || !current || gasToken === 'ETH' || !hasRelayConfig}
                   >
-                    {loading ? 'Gasless Mint 中...' : 'Gasless Mint'}
+                    {minting ? 'Mint 中...' : 'Gasless Mint ⚡'}
                   </button>
-                  {message ? <p className={omniGasStyles.statusText}>{message}</p> : null}
-                  {txHash ? (
-                    <a
-                      className={omniGasStyles.successLink}
-                      href={`${activeExplorerTxUrl}${txHash}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      交易成功：{activeExplorerTxUrl}{txHash}
-                    </a>
-                  ) : null}
-                </>
-              ) : null}
-            </div>
-
-            <div className={styles.widget}>
-              {showWidgetFallbackNotice ? (
-                <div className={omniGasStyles.widgetNotice}>
-                  当前钱包链 ID 为 {providerChainId}。当前项目固定使用的 `@uniswap/widgets` v1 不支持这条链，因此
-                  Swap Widget 会保持为以太坊主网只读模式。
                 </div>
-              ) : null}
-              <SwapWidget
-                jsonRpcEndpoint={JSON_RPC_URL}
-                tokenList={WIDGET_TOKENS}
-                provider={widgetProvider}
-                locale={locale}
-                onConnectWallet={focusConnectors}
-                defaultInputTokenAddress="NATIVE"
-                defaultInputAmount="1"
-                defaultOutputTokenAddress={UNI}
-              />
-            </div>
+              </div>
+            )}
+
+            {/* 状态消息 */}
+            {msg && <div className={styles.testMsg}>{msg}</div>}
+            {txHash && (
+              <a
+                className={styles.testTxLink}
+                href={`${EXPLORER_TX}${txHash}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                查看交易 ↗
+              </a>
+            )}
           </div>
         </div>
-
-        <hr className={styles.rule} />
-
-        <DocumentationCards />
-      </main>
+      )}
     </div>
   )
 }
 
-export default Home
+export default WalletHome
