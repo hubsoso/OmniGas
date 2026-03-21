@@ -708,8 +708,11 @@ const WalletHome: NextPage = () => {
               <button className={styles.testClose} onClick={() => setShowSwitcher(false)}>✕</button>
             </div>
             {accounts.map((acc) => {
-              const isPrimary = acc === primaryAccount
+              const isPrimary = acc.toLowerCase() === primaryAccount.toLowerCase()
               const isCurrent = acc === current
+              const isAuthorized = subAccountAuthStatus[acc.toLowerCase()]
+              const isAuthorizingThis = authorizingSubAccount === acc
+              const canAuthorize = current.toLowerCase() === primaryAccount.toLowerCase()
               return (
                 <div
                   key={acc}
@@ -727,27 +730,34 @@ const WalletHome: NextPage = () => {
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                         {isPrimary && <span className={styles.accountBadge}>⭐ 主账户</span>}
                         {isCurrent && <span className={styles.accountBadge}>当前</span>}
+                        {!isPrimary && primaryAccount && isAuthorized && <span className={styles.authBadgeOk}>✓ 已授权</span>}
+                        {!isPrimary && primaryAccount && !isAuthorized && <span className={styles.authBadgeWarn}>未授权</span>}
                       </div>
                     </div>
                   </button>
                   {isPrimary ? (
                     <button
                       className={styles.unsetPrimaryBtn}
-                      onClick={() => {
-                        localStorage.removeItem('omngas_primary_account')
-                        setPrimaryAccount('')
-                      }}
+                      onClick={() => { localStorage.removeItem('omngas_primary_account'); setPrimaryAccount('') }}
                     >
                       解除
                     </button>
-                  ) : !primaryAccount && (
+                  ) : !primaryAccount ? (
                     <button
                       className={styles.setAsPrimaryBtn}
                       onClick={() => { setPrimaryAccountTo(acc); setShowSwitcher(false) }}
                     >
                       设为主账户
                     </button>
-                  )}
+                  ) : !isAuthorized && canAuthorize ? (
+                    <button
+                      className={styles.authBtn}
+                      onClick={() => onAuthorizeSubAccount(acc)}
+                      disabled={!!authorizingSubAccount}
+                    >
+                      {isAuthorizingThis ? '授权中...' : '一键授权'}
+                    </button>
+                  ) : null}
                 </div>
               )
             })}
