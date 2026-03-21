@@ -229,10 +229,16 @@ const WalletHome: NextPage = () => {
     } catch {}
   }, [current])
 
+  // 钱包连接后立即拉取余额（页面刷新也会触发）
   useEffect(() => {
-    if (!current || !isSepoliaMode || (!showTest && !showOmnigas)) return
+    if (!current || !isSepoliaMode) return
     refreshBalances(current)
     refreshPayer(current)
+  }, [current, isSepoliaMode, refreshBalances, refreshPayer])
+
+  // 面板打开时持续轮询
+  useEffect(() => {
+    if (!current || !isSepoliaMode || (!showTest && !showOmnigas)) return
     const timer = window.setInterval(() => { refreshBalances(current); refreshPayer(current) }, 5000)
     return () => window.clearInterval(timer)
   }, [current, isSepoliaMode, showTest, showOmnigas, refreshBalances, refreshPayer])
