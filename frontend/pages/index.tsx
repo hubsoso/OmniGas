@@ -5,6 +5,7 @@ import { createPublicClient, createWalletClient, custom, parseAbi, parseUnits } 
 import { sepolia, mainnet } from 'viem/chains'
 import { useCallback, useEffect, useState } from 'react'
 import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../lib/rpc'
+import { pickSelectedAccount, setSelectedAccount } from '../lib/selectedAccount'
 import { THEME_ORDER, type ThemeMode, useThemeMode } from '../lib/theme'
 import styles from '../styles/Wallet.module.css'
 
@@ -156,13 +157,23 @@ const WalletHome: NextPage = () => {
   useEffect(() => {
     if (!window.ethereum) return
     window.ethereum.request({ method: 'eth_accounts' }).then((accs: string[]) => {
-      if (accs.length > 0) { setAccounts(accs); setCurrent(accs[0]) }
+      if (accs.length > 0) {
+        const nextCurrent = pickSelectedAccount(accs, accs[0])
+        setAccounts(accs)
+        setCurrent(nextCurrent)
+        setSelectedAccount(nextCurrent)
+      }
     }).catch(() => {})
   }, [])
 
   useEffect(() => {
     if (!window.ethereum) return
-    const handler = (accs: string[]) => { setAccounts(accs); setCurrent(accs[0] || '') }
+    const handler = (accs: string[]) => {
+      const nextCurrent = pickSelectedAccount(accs, accs[0] || '')
+      setAccounts(accs)
+      setCurrent(nextCurrent)
+      if (nextCurrent) setSelectedAccount(nextCurrent)
+    }
     window.ethereum.on('accountsChanged', handler)
     return () => window.ethereum.removeListener?.('accountsChanged', handler)
   }, [])
@@ -219,7 +230,10 @@ const WalletHome: NextPage = () => {
         return
       }
 
-      setAccounts(accs); setCurrent(accs[0])
+      const nextCurrent = pickSelectedAccount(accs, accs[0])
+      setAccounts(accs)
+      setCurrent(nextCurrent)
+      setSelectedAccount(nextCurrent)
       setShowLogin(false); setShowSwitcher(false)
       setMsg('✅ 账户已添加')
 
@@ -465,6 +479,11 @@ const WalletHome: NextPage = () => {
     setPrimaryAccount(account.toLowerCase())
   }, [accounts])
 
+  const selectCurrentAccount = useCallback((account: string) => {
+    setCurrent(account)
+    setSelectedAccount(account)
+  }, [])
+
   const onOmnigasDeposit = useCallback(async () => {
     if (!current || !vaultAddress) { setOmnigasMsg('请先连接钱包'); return }
     const cfg = tokenConfig[omnigasToken]
@@ -603,7 +622,7 @@ const WalletHome: NextPage = () => {
     } finally {
       setMinting(false)
     }
-  }, [current, refreshBalances, selectedToken])
+  }, [current, primaryAccount, refreshBalances, selectedToken, subAccountAuthStatus])
 
   // ── JSX ──────────────────────────────────────────────
   return (
@@ -667,7 +686,7 @@ const WalletHome: NextPage = () => {
           )
           if (!unauthorizedSubs.length) return null
           return (
-            <div className={styles.homeAuthNotice} onClick={() => { setCurrent(primaryAccount); setShowSwitcher(true) }}>
+            <div className={styles.homeAuthNotice} onClick={() => { selectCurrentAccount(primaryAccount); setShowSwitcher(true) }}>
               ⚠️ {unauthorizedSubs.length} 个子账户未授权，点击前往授权 →
             </div>
           )
@@ -731,7 +750,7 @@ const WalletHome: NextPage = () => {
                 >
                   <button
                     style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                    onClick={() => { setCurrent(acc); setShowSwitcher(false) }}
+                    onClick={() => { selectCurrentAccount(acc); setShowSwitcher(false) }}
                   >
                     <div className={styles.accountAvatar} style={{ background: getAvatarColor(acc) }}>
                       {acc.slice(2, 4).toUpperCase()}
@@ -832,7 +851,7 @@ const WalletHome: NextPage = () => {
                 </span>
                 <button
                   className={styles.subAccountSwitchBtn}
-                  onClick={() => { setCurrent(primaryAccount); setShowOmnigas(false) }}
+                  onClick={() => { selectCurrentAccount(primaryAccount); setShowOmnigas(false) }}
                 >
                   切换
                 </button>
@@ -931,7 +950,7 @@ const WalletHome: NextPage = () => {
             {primaryAccount && current !== primaryAccount ? (
               <button
                 className={styles.omnigasDepositBtn}
-                onClick={() => { setCurrent(primaryAccount); setShowOmnigas(false) }}
+                onClick={() => { selectCurrentAccount(primaryAccount); setShowOmnigas(false) }}
               >
                 切换到主账户充值 →
               </button>

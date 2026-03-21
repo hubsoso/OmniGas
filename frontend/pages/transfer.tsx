@@ -7,6 +7,7 @@ import { sepolia } from 'viem/chains'
 import { useCallback, useEffect, useState } from 'react'
 import { connectors } from '../connectors'
 import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../lib/rpc'
+import { pickSelectedAccount } from '../lib/selectedAccount'
 import { useThemeMode } from '../lib/theme'
 import styles from '../styles/Transfer.module.css'
 
@@ -48,7 +49,7 @@ declare global {
 
 const TransferPage: NextPage = () => {
   const router = useRouter()
-  const { account } = useWeb3React()
+  const { account, accounts } = useWeb3React()
   const { isLight } = useThemeMode()
   const [recipient, setRecipient] = useState('')
   const [amount, setAmount] = useState('')
@@ -70,6 +71,8 @@ const TransferPage: NextPage = () => {
     ETH: ZERO_BALANCE,
   })
 
+  const activeAccount = pickSelectedAccount(accounts ?? (account ? [account] : []), account || '')
+
   const connectWallet = useCallback(async () => {
     const [connector] = connectors[0]
     await connector.activate()
@@ -89,14 +92,14 @@ const TransferPage: NextPage = () => {
   const insufficientBalance = parsedAmountValue !== null && parsedAmountValue > selectedTokenBalanceValue
 
   const refreshBalances = useCallback(async (walletAccount?: string) => {
-    const activeAccount = walletAccount || account
-    if (!activeAccount) {
+    const nextAccount = walletAccount || activeAccount
+    if (!nextAccount) {
       setTokenBalanceValues({ USDC: 0n, BOX: 0n, ETH: 0n })
       setTokenBalances({ USDC: ZERO_BALANCE, BOX: ZERO_BALANCE, ETH: ZERO_BALANCE })
       return
     }
 
-    const wallet = getAddress(activeAccount)
+    const wallet = getAddress(nextAccount)
     const [ethBalance, usdcBalance, boxBalance] = await Promise.all([
       publicClient.getBalance({ address: wallet }),
       USDC_ADDRESS
@@ -127,7 +130,7 @@ const TransferPage: NextPage = () => {
       BOX: boxBalance,
       ETH: ethBalance,
     })
-  }, [account])
+  }, [activeAccount])
 
   const getWalletClient = useCallback(async () => {
     if (!window.ethereum) throw new Error('请先安装 MetaMask')
@@ -140,7 +143,7 @@ const TransferPage: NextPage = () => {
   }, [])
 
   const handleSubmit = useCallback(async () => {
-    if (!account) {
+    if (!activeAccount) {
       setTxHash('')
       setSubmitMessage('请先连接钱包')
       setSubmitStatus('error')
@@ -200,7 +203,7 @@ const TransferPage: NextPage = () => {
       setSubmitMessage('正在发起转账…')
       setSubmitStatus('pending')
       const walletClient = await getWalletClient()
-      const sender = getAddress(account)
+      const sender = getAddress(activeAccount)
 
       let hash: `0x${string}`
       if (token === 'ETH') {
@@ -236,14 +239,15 @@ const TransferPage: NextPage = () => {
     } finally {
       setSubmitting(false)
     }
-  }, [account, amount, getWalletClient, recipient, refreshBalances, selectedToken.decimals, selectedTokenBalanceValue, token])
+  }, [activeAccount, amount, getWalletClient, recipient, refreshBalances, selectedToken.decimals, selectedTokenBalanceValue, token])
 
   useEffect(() => {
     let cancelled = false
 
     async function loadBalances() {
-      if (!account) {
+      if (!activeAccount) {
         if (!cancelled) {
+          setTokenBalanceValues({ USDC: 0n, BOX: 0n, ETH: 0n })
           setTokenBalances({ USDC: ZERO_BALANCE, BOX: ZERO_BALANCE, ETH: ZERO_BALANCE })
         }
         return
@@ -251,7 +255,7 @@ const TransferPage: NextPage = () => {
 
       try {
         if (!cancelled) {
-          await refreshBalances(account)
+          await refreshBalances(activeAccount)
         }
       } catch {
         if (!cancelled) {
@@ -268,7 +272,7 @@ const TransferPage: NextPage = () => {
       cancelled = true
       window.clearInterval(timer)
     }
-  }, [account, refreshBalances])
+  }, [activeAccount, refreshBalances])
 
   return (
     <>
@@ -296,9 +300,9 @@ const TransferPage: NextPage = () => {
               <span className={styles.title}>转账</span>
             </div>
 
-            {account ? (
+            {activeAccount ? (
               <button type="button" className={styles.walletBadge}>
-                {shortAddress(account)}
+                {shortAddress(activeAccount)}
               </button>
             ) : (
               <button type="button" className={styles.walletBadge} onClick={connectWallet}>

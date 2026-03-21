@@ -114,6 +114,46 @@
   color: var(--muted);
 }
 
+.networkNotice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 1px solid var(--chip-border);
+  background: color-mix(in srgb, var(--chip-bg) 82%, transparent);
+}
+
+.networkTitle {
+  margin: 0 0 4px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.networkText {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.networkButton {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #24c26a;
+  color: #ffffff;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
 .widgetShell {
   border-radius: 26px;
   overflow: hidden;
@@ -121,20 +161,23 @@
 }
 
 .backButton:hover,
-.walletBadge:hover {
+.walletBadge:hover,
+.networkButton:hover {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--chip-border) 78%, white 22%);
 }
 
 .backButton:focus-visible,
-.walletBadge:focus-visible {
+.walletBadge:focus-visible,
+.networkButton:focus-visible {
   outline: none;
   box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .backButton,
-  .walletBadge {
+  .walletBadge,
+  .networkButton {
     transition: none;
   }
 }
@@ -151,6 +194,15 @@
 
   .toolbar {
     margin-bottom: 12px;
+  }
+
+  .networkNotice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .networkButton {
+    width: 100%;
   }
 
   .walletBadge {

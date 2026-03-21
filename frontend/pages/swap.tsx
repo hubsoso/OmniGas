@@ -10,6 +10,7 @@ import '@uniswap/widgets/fonts.css'
 
 import { connectors, useActiveProvider } from '../connectors'
 import { JSON_RPC_URL } from '../constants'
+import { pickSelectedAccount } from '../lib/selectedAccount'
 import { THEME_ORDER, type ThemeMode, useThemeMode } from '../lib/theme'
 import { useCallback, useEffect, useState } from 'react'
 import styles from '../styles/Swap.module.css'
@@ -22,7 +23,8 @@ const SwapWidget = dynamic<SwapWidgetProps>(
 const UNI = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
 const USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
 const WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-const WIDGET_SUPPORTED_CHAIN_IDS = new Set([1, 3, 4, 5, 10, 42, 69, 137, 80001, 42161, 421611])
+const ETHEREUM_MAINNET_CHAIN_ID = 1
+const WIDGET_SUPPORTED_CHAIN_IDS = new Set([ETHEREUM_MAINNET_CHAIN_ID, 10, 137, 42161])
 const WIDGET_TOKENS: TokenInfo[] = [
   {
     chainId: 1,
@@ -49,12 +51,14 @@ const WIDGET_TOKENS: TokenInfo[] = [
 
 const SwapPage: NextPage = () => {
   const provider = useActiveProvider()
-  const { account } = useWeb3React()
+  const { account, accounts } = useWeb3React()
   const router = useRouter()
   const { themeMode, isLight, setThemeMode } = useThemeMode()
   const [providerChainId, setProviderChainId] = useState<number | null>(null)
+  const activeAccount = pickSelectedAccount(accounts ?? (account ? [account] : []), account || '')
 
   const widgetSupportsConnectedChain = providerChainId !== null && WIDGET_SUPPORTED_CHAIN_IDS.has(providerChainId)
+  const isWrongNetwork = providerChainId !== null && providerChainId !== ETHEREUM_MAINNET_CHAIN_ID
 
   const widgetTheme: Theme = isLight
     ? {
@@ -99,6 +103,18 @@ const SwapPage: NextPage = () => {
   const connectMetaMask = useCallback(async () => {
     const [connector] = connectors[0]
     await connector.activate()
+  }, [])
+
+  const switchToMainnet = useCallback(async () => {
+    const ethereum = typeof window !== 'undefined' ? (window as Window & { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> } }).ethereum : undefined
+    if (!ethereum) {
+      return
+    }
+
+    await ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x1' }],
+    })
   }, [])
 
   useEffect(() => {
@@ -150,15 +166,31 @@ const SwapPage: NextPage = () => {
             >
               ←
             </button>
-            {account ? (
+            {activeAccount ? (
               <div className={styles.walletBadge}>
-                {`${account.slice(0, 6)}...${account.slice(-4)}`}
-                {!widgetSupportsConnectedChain && providerChainId !== null ? (
-                  <span className={styles.warning}>· Unsupported for widget</span>
+                {`${activeAccount.slice(0, 6)}...${activeAccount.slice(-4)}`}
+                {providerChainId !== null ? (
+                  <span className={styles.warning}>
+                    · {providerChainId === ETHEREUM_MAINNET_CHAIN_ID ? 'Ethereum Mainnet' : `Chain ${providerChainId}`}
+                  </span>
                 ) : null}
               </div>
             ) : null}
           </div>
+
+          {isWrongNetwork ? (
+            <div className={styles.networkNotice}>
+              <div>
+                <p className={styles.networkTitle}>Swap 仅支持 Ethereum Mainnet</p>
+                <p className={styles.networkText}>
+                  你当前连接的是 Chain {providerChainId}。切换到主网后，Uniswap widget 才能正常报价和发起交易。
+                </p>
+              </div>
+              <button type="button" onClick={switchToMainnet} className={styles.networkButton}>
+                切换到主网
+              </button>
+            </div>
+          ) : null}
 
           <div className={`swap-widget-shell ${styles.widgetShell}`}>
             <SwapWidget
