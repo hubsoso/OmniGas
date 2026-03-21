@@ -162,6 +162,7 @@ const WalletHome: NextPage = () => {
   const [delegateInput, setDelegateInput] = useState('') // 授权/撤销输入框
   const [delegating, setDelegating] = useState(false)
   const [subAccountAuthStatus, setSubAccountAuthStatus] = useState<Record<string, boolean>>({}) // 子账户链上授权状态
+  const [authorizingSubAccount, setAuthorizingSubAccount] = useState<string>('') // 正在授权的子账户地址
 
   const isSepoliaMode = networkMode === 'sepolia'
   const selectedToken = gasToken === 'ETH' ? null : tokenConfig[gasToken]
@@ -340,6 +341,27 @@ const WalletHome: NextPage = () => {
     if (Number(chainId) !== CHAIN_ID) throw new Error(`请切换到 Sepolia (${CHAIN_ID})`)
     return createWalletClient({ chain: APP_CHAIN, transport: custom(window.ethereum) })
   }, [])
+
+  const onAuthorizeSubAccount = useCallback(async (subAccount: string) => {
+    if (!current || !vaultAddress) return
+    setAuthorizingSubAccount(subAccount)
+    try {
+      const wc = await getWalletClient()
+      const hash = await wc.writeContract({
+        account: current as `0x${string}`,
+        address: vaultAddress,
+        abi: VAULT_DELEGATE_ABI,
+        functionName: 'authorize',
+        args: [subAccount as `0x${string}`],
+      })
+      await publicClient.waitForTransactionReceipt({ hash })
+      await refreshSubAccountAuthStatus()
+    } catch (e: any) {
+      alert(e.shortMessage || e.message || '授权失败')
+    } finally {
+      setAuthorizingSubAccount('')
+    }
+  }, [current, getWalletClient, refreshSubAccountAuthStatus])
 
   const onAuthorize = useCallback(async () => {
     if (!current || !delegateInput || !vaultAddress) { setMsg('请输入 wallet 地址'); return }
