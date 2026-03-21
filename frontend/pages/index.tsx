@@ -656,7 +656,7 @@ const WalletHome: NextPage = () => {
           )
           if (!unauthorizedSubs.length) return null
           return (
-            <div className={styles.homeAuthNotice} onClick={() => setShowSwitcher(true)}>
+            <div className={styles.homeAuthNotice} onClick={() => { setCurrent(primaryAccount); setShowSwitcher(true) }}>
               ⚠️ {unauthorizedSubs.length} 个子账户未授权，点击前往授权 →
             </div>
           )
