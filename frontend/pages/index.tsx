@@ -856,22 +856,31 @@ const WalletHome: NextPage = () => {
             </div>
 
             {/* Vault 余额 */}
-            {isSepoliaMode && current && (
-              <div className={styles.testSection}>
-                <div className={styles.testLabel}>Vault 余额</div>
-                {/* 📌 任务#4：优化显示 - 分别显示「自有」「代付可用」「合计」 */}
-                {balances.effectivePayer && balances.effectivePayer.toLowerCase() !== current.toLowerCase() && (
-                  <div className={styles.testPayerHint}>
-                    代付方：{balances.effectivePayer.slice(0, 10)}...
+            {isSepoliaMode && current && (() => {
+              const isSubAccount = primaryAccount && current !== primaryAccount
+              const hasOnChainPayer = balances.effectivePayer && balances.effectivePayer.toLowerCase() !== current.toLowerCase()
+              return (
+                <div className={styles.testSection}>
+                  <div className={styles.testLabel}>Vault 余额</div>
+                  {isSubAccount && (
+                    hasOnChainPayer ? (
+                      <div className={styles.balanceSourceHint}>
+                        来自主账户 {balances.effectivePayer.slice(0, 6)}...{balances.effectivePayer.slice(-4)}
+                      </div>
+                    ) : (
+                      <div className={styles.balanceSourceWarn}>
+                        ⚠️ 主账户未在链上授权，余额为 0
+                      </div>
+                    )
+                  )}
+                  <div className={styles.testBalances}>
+                    <div className={styles.testBalRow}><span>USDC</span><strong>{balances.usdcBalance}</strong></div>
+                    <div className={styles.testBalRow}><span>BOX</span><strong>{balances.boxBalance}</strong></div>
+                    <div className={styles.testBalRow}><span>NFT</span><strong>{balances.nftCount}</strong></div>
                   </div>
-                )}
-                <div className={styles.testBalances}>
-                  <div className={styles.testBalRow}><span>USDC</span><strong>{balances.usdcBalance}</strong></div>
-                  <div className={styles.testBalRow}><span>BOX</span><strong>{balances.boxBalance}</strong></div>
-                  <div className={styles.testBalRow}><span>NFT</span><strong>{balances.nftCount}</strong></div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
             {/* 委托管理 */}
             {/* 📌 任务#6：简化 UI - 隐藏手动授权输入框，只显示只读信息 */}
