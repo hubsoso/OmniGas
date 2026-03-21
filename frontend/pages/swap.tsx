@@ -1,4 +1,5 @@
 import type { NextPage } from 'next'
+import { useWeb3React } from '@web3-react/core'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import dynamic from 'next/dynamic'
@@ -49,13 +50,13 @@ const THEME_ORDER: ThemeMode[] = ['system', 'dark', 'light']
 
 const SwapPage: NextPage = () => {
   const provider = useActiveProvider()
+  const { account } = useWeb3React()
   const router = useRouter()
   const [themeMode, setThemeMode] = useState<ThemeMode>('system')
   const [systemDark, setSystemDark] = useState(false)
   const [providerChainId, setProviderChainId] = useState<number | null>(null)
 
   const widgetSupportsConnectedChain = providerChainId !== null && WIDGET_SUPPORTED_CHAIN_IDS.has(providerChainId)
-  const widgetProvider = widgetSupportsConnectedChain ? provider : undefined
   const isLight = themeMode === 'light' || (themeMode === 'system' && !systemDark)
 
   const widgetTheme: Theme = isLight
@@ -185,7 +186,7 @@ const SwapPage: NextPage = () => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'flex-start',
+              justifyContent: 'space-between',
               gap: '12px',
               marginBottom: '12px',
             }}
@@ -206,6 +207,25 @@ const SwapPage: NextPage = () => {
             >
               ←
             </button>
+            {account ? (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 14px',
+                  borderRadius: '999px',
+                  background: isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.08)',
+                  border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(255,255,255,0.1)',
+                  color: isLight ? '#111827' : '#f9fafb',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                }}
+              >
+                {`${account.slice(0, 6)}...${account.slice(-4)}`}
+                {!widgetSupportsConnectedChain && providerChainId !== null ? ' · Unsupported for widget' : ''}
+              </div>
+            ) : null}
           </div>
 
           <div
@@ -218,7 +238,7 @@ const SwapPage: NextPage = () => {
             <SwapWidget
               jsonRpcEndpoint={JSON_RPC_URL}
               tokenList={WIDGET_TOKENS}
-              provider={widgetProvider}
+              provider={provider}
               locale="en-US"
               theme={widgetTheme}
               width="100%"
