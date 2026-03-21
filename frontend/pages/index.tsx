@@ -259,15 +259,17 @@ const WalletHome: NextPage = () => {
   const refreshBalances = useCallback(async (address?: string) => {
     const addr = address || current
     if (!addr || !isSepoliaMode) return
+    // 子账户时查询主账户的余额（主账户余额才是实际可用的）
+    const queryAddr = (primaryAccount && current !== primaryAccount) ? primaryAccount : addr
     try {
-      const res = await fetch(`/api/balance?address=${addr}`)
+      const res = await fetch(`/api/balance?address=${queryAddr}`)
       const data = await res.json()
       if (res.ok) {
         setBalances(data)
         setCookie(`ogbal_${addr.toLowerCase()}`, JSON.stringify(data))
       }
     } catch {}
-  }, [current, isSepoliaMode])
+  }, [current, isSepoliaMode, primaryAccount])
 
   const refreshPayer = useCallback(async (address?: string) => {
     const addr = (address || current) as `0x${string}`
@@ -710,7 +712,9 @@ const WalletHome: NextPage = () => {
                 </div>
                 <div className={styles.omnigasTokenBalCol}>
                   <span className={styles.omnigasTokenBal}>Vault: {t.vaultBal}</span>
-                  <span className={styles.omnigasTokenSub}>Testnet</span>
+                  <span className={styles.omnigasTokenSub}>
+                    {primaryAccount && current !== primaryAccount ? '主账户' : 'Testnet'}
+                  </span>
                 </div>
               </button>
             ))}
@@ -763,7 +767,7 @@ const WalletHome: NextPage = () => {
               <div className={styles.omnigasLabelRow}>
                 <div className={styles.omnigasLabel}>数量</div>
                 <div className={styles.omnigasVaultBal}>
-                  Vault: {omnigasToken === 'USDC' ? balances.usdcBalance : balances.boxBalance} {omnigasToken}
+                  {primaryAccount && current !== primaryAccount ? '主账户 ' : ''}Vault: {omnigasToken === 'USDC' ? balances.usdcBalance : balances.boxBalance} {omnigasToken}
                 </div>
               </div>
               <div className={styles.omnigasAmounts}>
