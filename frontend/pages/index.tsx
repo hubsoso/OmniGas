@@ -23,6 +23,12 @@ const API_TIMEOUT = 15_000
 
 const ERC20_ABI = parseAbi(['function approve(address spender, uint256 amount) external returns (bool)'])
 const VAULT_ABI = parseAbi(['function deposit(address token, uint256 amount) external'])
+const VAULT_DELEGATE_ABI = parseAbi([
+  'function authorize(address wallet) external',
+  'function revoke(address wallet) external',
+  'function detach() external',
+  'function payerOf(address wallet) view returns (address)',
+])
 
 const tokenConfig = {
   USDC: {
@@ -97,12 +103,17 @@ const WalletHome: NextPage = () => {
   const [showTest, setShowTest] = useState(false)
   const [networkMode, setNetworkMode] = useState<NetworkMode>('sepolia')
   const [gasToken, setGasToken] = useState<GasToken>('USDC')
-  const [balances, setBalances] = useState({ usdcBalance: '--', boxBalance: '--', nftCount: '--' })
+  const [balances, setBalances] = useState({ usdcBalance: '--', boxBalance: '--', nftCount: '--', effectivePayer: '' })
   const [claiming, setClaiming] = useState(false)
   const [depositing, setDepositing] = useState(false)
   const [minting, setMinting] = useState(false)
   const [msg, setMsg] = useState('')
   const [txHash, setTxHash] = useState('')
+
+  // 委托管理
+  const [myPayer, setMyPayer] = useState('')           // payerOf[me]，我绑定的 payer
+  const [delegateInput, setDelegateInput] = useState('') // 授权/撤销输入框
+  const [delegating, setDelegating] = useState(false)
 
   const isSepoliaMode = networkMode === 'sepolia'
   const selectedToken = gasToken === 'ETH' ? null : tokenConfig[gasToken]
@@ -166,12 +177,27 @@ const WalletHome: NextPage = () => {
     } catch {}
   }, [current, isSepoliaMode])
 
+  const refreshPayer = useCallback(async (address?: string) => {
+    const addr = (address || current) as `0x${string}`
+    if (!addr || !vaultAddress) return
+    try {
+      const payer = await publicClient.readContract({
+        address: vaultAddress,
+        abi: VAULT_DELEGATE_ABI,
+        functionName: 'payerOf',
+        args: [addr],
+      })
+      setMyPayer(payer === '0x0000000000000000000000000000000000000000' ? '' : payer as string)
+    } catch {}
+  }, [current])
+
   useEffect(() => {
     if (!current || !isSepoliaMode || !showTest) return
     refreshBalances(current)
-    const timer = window.setInterval(() => refreshBalances(current), 5000)
+    refreshPayer(current)
+    const timer = window.setInterval(() => { refreshBalances(current); refreshPayer(current) }, 5000)
     return () => window.clearInterval(timer)
-  }, [current, isSepoliaMode, showTest, refreshBalances])
+  }, [current, isSepoliaMode, showTest, refreshBalances, refreshPayer])
 
   const getWalletClient = useCallback(async () => {
     if (!provider) throw new Error('请先连接 MetaMask')
@@ -181,6 +207,75 @@ const WalletHome: NextPage = () => {
     if (!externalProvider) throw new Error('Wallet provider unavailable')
     return createWalletClient({ chain: APP_CHAIN, transport: custom(externalProvider) })
   }, [provider])
+
+  const onAuthorize = useCallback(async () => {
+    if (!current || !delegateInput || !vaultAddress) { setMsg('请输入 wallet 地址'); return }
+    setDelegating(true); setMsg(''); setTxHash('')
+    try {
+      const wc = await getWalletClient()
+      const hash = await wc.writeContract({
+        account: current as `0x${string}`,
+        address: vaultAddress,
+        abi: VAULT_DELEGATE_ABI,
+        functionName: 'authorize',
+        args: [delegateInput as `0x${string}`],
+      })
+      await publicClient.waitForTransactionReceipt({ hash })
+      setMsg(`已授权 ${delegateInput.slice(0, 10)}...`)
+      setTxHash(hash)
+      setDelegateInput('')
+    } catch (e: any) {
+      setMsg(e.shortMessage || e.message || '授权失败')
+    } finally {
+      setDelegating(false)
+    }
+  }, [current, delegateInput, getWalletClient])
+
+  const onRevoke = useCallback(async () => {
+    if (!current || !delegateInput || !vaultAddress) { setMsg('请输入 wallet 地址'); return }
+    setDelegating(true); setMsg(''); setTxHash('')
+    try {
+      const wc = await getWalletClient()
+      const hash = await wc.writeContract({
+        account: current as `0x${string}`,
+        address: vaultAddress,
+        abi: VAULT_DELEGATE_ABI,
+        functionName: 'revoke',
+        args: [delegateInput as `0x${string}`],
+      })
+      await publicClient.waitForTransactionReceipt({ hash })
+      setMsg(`已撤销 ${delegateInput.slice(0, 10)}...`)
+      setTxHash(hash)
+      setDelegateInput('')
+    } catch (e: any) {
+      setMsg(e.shortMessage || e.message || '撤销失败')
+    } finally {
+      setDelegating(false)
+    }
+  }, [current, delegateInput, getWalletClient])
+
+  const onDetach = useCallback(async () => {
+    if (!current || !vaultAddress) return
+    setDelegating(true); setMsg(''); setTxHash('')
+    try {
+      const wc = await getWalletClient()
+      const hash = await wc.writeContract({
+        account: current as `0x${string}`,
+        address: vaultAddress,
+        abi: VAULT_DELEGATE_ABI,
+        functionName: 'detach',
+        args: [],
+      })
+      await publicClient.waitForTransactionReceipt({ hash })
+      setMyPayer('')
+      setMsg('已解除绑定')
+      setTxHash(hash)
+    } catch (e: any) {
+      setMsg(e.shortMessage || e.message || '解除失败')
+    } finally {
+      setDelegating(false)
+    }
+  }, [current, getWalletClient])
 
   const onClaim = useCallback(async () => {
     if (!current) { setMsg('请先连接钱包'); return }
@@ -398,10 +493,62 @@ const WalletHome: NextPage = () => {
             {isSepoliaMode && current && (
               <div className={styles.testSection}>
                 <div className={styles.testLabel}>Vault 余额</div>
+                {balances.effectivePayer && balances.effectivePayer.toLowerCase() !== current.toLowerCase() && (
+                  <div className={styles.testPayerHint}>
+                    代付方：{balances.effectivePayer.slice(0, 10)}...
+                  </div>
+                )}
                 <div className={styles.testBalances}>
                   <div className={styles.testBalRow}><span>USDC</span><strong>{balances.usdcBalance}</strong></div>
                   <div className={styles.testBalRow}><span>BOX</span><strong>{balances.boxBalance}</strong></div>
                   <div className={styles.testBalRow}><span>NFT</span><strong>{balances.nftCount}</strong></div>
+                </div>
+              </div>
+            )}
+
+            {/* 委托管理 */}
+            {isSepoliaMode && current && (
+              <div className={styles.testSection}>
+                <div className={styles.testLabel}>委托管理</div>
+
+                {/* 我绑定的 payer */}
+                {myPayer ? (
+                  <div className={styles.testDelegateInfo}>
+                    <span>绑定代付：{myPayer.slice(0, 10)}...</span>
+                    <button
+                      className={styles.testDelegateDetach}
+                      onClick={onDetach}
+                      disabled={delegating}
+                    >
+                      {delegating ? '...' : '解除'}
+                    </button>
+                  </div>
+                ) : (
+                  <div className={styles.testDelegateNone}>未绑定代付方</div>
+                )}
+
+                {/* 授权 / 撤销 wallet */}
+                <div className={styles.testDelegateRow}>
+                  <input
+                    className={styles.testDelegateInput}
+                    placeholder="Wallet 地址 0x..."
+                    value={delegateInput}
+                    onChange={(e) => setDelegateInput(e.target.value)}
+                  />
+                  <button
+                    className={styles.testChip}
+                    onClick={onAuthorize}
+                    disabled={delegating || !delegateInput}
+                  >
+                    授权
+                  </button>
+                  <button
+                    className={styles.testChip}
+                    onClick={onRevoke}
+                    disabled={delegating || !delegateInput}
+                  >
+                    撤销
+                  </button>
                 </div>
               </div>
             )}

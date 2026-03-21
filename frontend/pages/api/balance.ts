@@ -3,7 +3,10 @@ import { createPublicClient, parseAbi } from 'viem'
 import { sepolia } from 'viem/chains'
 import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../../lib/rpc'
 
-const VAULT_ABI = parseAbi(['function balanceOf(address token, address user) view returns (uint256)'])
+const VAULT_ABI = parseAbi([
+  'function balanceOf(address token, address user) view returns (uint256)',
+  'function effectivePayer(address wallet) view returns (address)',
+])
 const NFT_ABI = parseAbi(['function balanceOf(address owner) view returns (uint256)'])
 
 const chain = sepolia
@@ -34,18 +37,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // 先查实际付款方
+    const payer = await publicClient.readContract({
+      address: vaultAddress,
+      abi: VAULT_ABI,
+      functionName: 'effectivePayer',
+      args: [address as `0x${string}`],
+    })
+
     const [usdcRaw, boxRaw, nftCount] = await Promise.all([
       publicClient.readContract({
         address: vaultAddress,
         abi: VAULT_ABI,
         functionName: 'balanceOf',
-        args: [usdcAddress, address as `0x${string}`],
+        args: [usdcAddress, payer],
       }),
       publicClient.readContract({
         address: vaultAddress,
         abi: VAULT_ABI,
         functionName: 'balanceOf',
-        args: [boxAddress, address as `0x${string}`],
+        args: [boxAddress, payer],
       }),
       publicClient.readContract({
         address: nftAddress,
@@ -59,6 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       usdcBalance: (Number(usdcRaw) / 1e6).toFixed(2),
       boxBalance: (Number(boxRaw) / 1e18).toFixed(4),
       nftCount: nftCount.toString(),
+      effectivePayer: payer,
     })
   } catch (error: any) {
     console.error('[balance] error:', error)
