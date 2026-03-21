@@ -474,6 +474,36 @@
   border-color: rgba(239, 68, 68, 0.5);
 }
 
+.authBtn {
+  padding: 8px 12px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 10px;
+  color: #F59E0B;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.authBtn:hover { background: rgba(245, 158, 11, 0.25); }
+.authBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.authBadgeOk {
+  font-size: 11px;
+  padding: 2px 7px;
+  background: rgba(16, 185, 129, 0.15);
+  border-radius: 6px;
+  color: #10B981;
+}
+.authBadgeWarn {
+  font-size: 11px;
+  padding: 2px 7px;
+  background: rgba(245, 158, 11, 0.12);
+  border-radius: 6px;
+  color: #F59E0B;
+}
+
 .setAsPrimaryBtn {
   padding: 8px 12px;
   background: rgba(99, 102, 241, 0.15);

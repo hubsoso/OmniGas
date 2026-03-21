@@ -517,8 +517,15 @@ const WalletHome: NextPage = () => {
   }, [current, getWalletClient, refreshBalances, selectedToken])
 
   const onMint = useCallback(async () => {
-    // 📌 任务#5：若当前 !== primaryAccount，在这里显示确认框
     if (!current || !selectedToken?.address) { setMsg('请选择 USDC 或 BOX'); return }
+    // 子账户 mint 前检测链上授权
+    if (primaryAccount && current.toLowerCase() !== primaryAccount.toLowerCase()) {
+      const isAuthorized = subAccountAuthStatus[current.toLowerCase()]
+      if (!isAuthorized) {
+        setMsg('❌ 当前子账户未获链上授权，请先切换到主账户完成授权')
+        return
+      }
+    }
     setMinting(true); setMsg(''); setTxHash('')
     try {
       const { response, data } = await fetchWithTimeout('/api/relay', {
