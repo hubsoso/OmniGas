@@ -522,7 +522,14 @@ const WalletHome: NextPage = () => {
               <div className={styles.avatar} style={{ background: getAvatarColor(current) }}>
                 {current.slice(2, 4).toUpperCase()}
               </div>
-              <span className={styles.addrText}>{shortAddr(current)}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
+                <span className={styles.addrText}>{shortAddr(current)}</span>
+                {primaryAccount && (
+                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
+                    {current === primaryAccount ? '⭐ 主账户' : '💫 子账户'}
+                  </span>
+                )}
+              </div>
               <span className={styles.chevron}>▾</span>
             </button>
           ) : (
@@ -598,22 +605,40 @@ const WalletHome: NextPage = () => {
               <h3 className={styles.omnigasTitle}>切换账户</h3>
               <button className={styles.testClose} onClick={() => setShowSwitcher(false)}>✕</button>
             </div>
-            {/* 📌 任务#7：添加主账户标记和"设为主账户"按钮 */}
-            {accounts.map((acc) => (
-              <button
-                key={acc}
-                className={[styles.accountItem, acc === current ? styles.accountItemActive : ''].join(' ')}
-                onClick={() => { setCurrent(acc); setShowSwitcher(false) }}
-              >
-                <div className={styles.accountAvatar} style={{ background: getAvatarColor(acc) }}>
-                  {acc.slice(2, 4).toUpperCase()}
+            {accounts.map((acc) => {
+              const isPrimary = acc === primaryAccount
+              const isCurrent = acc === current
+              return (
+                <div
+                  key={acc}
+                  className={[styles.accountItem, isCurrent ? styles.accountItemActive : ''].join(' ')}
+                >
+                  <button
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    onClick={() => { setCurrent(acc); setShowSwitcher(false) }}
+                  >
+                    <div className={styles.accountAvatar} style={{ background: getAvatarColor(acc) }}>
+                      {acc.slice(2, 4).toUpperCase()}
+                    </div>
+                    <div className={styles.accountInfo}>
+                      <span className={styles.accountAddr}>{shortAddr(acc)}</span>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        {isPrimary && <span className={styles.accountBadge}>⭐ 主账户</span>}
+                        {isCurrent && <span className={styles.accountBadge}>当前</span>}
+                      </div>
+                    </div>
+                  </button>
+                  {!isPrimary && (
+                    <button
+                      className={styles.setAsPrimaryBtn}
+                      onClick={() => { setPrimaryAccountTo(acc); setShowSwitcher(false) }}
+                    >
+                      设为主账户
+                    </button>
+                  )}
                 </div>
-                <div className={styles.accountInfo}>
-                  <span className={styles.accountAddr}>{shortAddr(acc)}</span>
-                  {acc === current && <span className={styles.accountBadge}>当前</span>}
-                </div>
-              </button>
-            ))}
+              )
+            })}
             <button className={styles.addAccountBtn} onClick={connectWallet}>+ 添加 / 切换账户</button>
           </div>
         </div>
