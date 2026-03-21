@@ -1,12 +1,117 @@
-/* ── 页面根容器 ── */
+/* ══════════════════════════════════════════
+   CSS Variables — Dark (default)
+   ══════════════════════════════════════════ */
 .phone {
+  --bg: linear-gradient(180deg, #0D0D1A 0%, #141428 100%);
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.45);
+  --text-faint: rgba(255, 255, 255, 0.25);
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --card-border: rgba(255, 255, 255, 0.09);
+  --btn-bg: rgba(255, 255, 255, 0.08);
+  --btn-border: rgba(255, 255, 255, 0.12);
+  --btn-hover-bg: rgba(255, 255, 255, 0.14);
+  --sheet-bg: #1A1A2E;
+  --sheet-border: rgba(255, 255, 255, 0.1);
+  --handle: rgba(255, 255, 255, 0.18);
+  --overlay: rgba(0, 0, 0, 0.65);
+  --chip-bg: rgba(255, 255, 255, 0.05);
+  --chip-border: rgba(255, 255, 255, 0.12);
+  --chip-color: rgba(255, 255, 255, 0.6);
+  --chip-active-bg: rgba(99, 102, 241, 0.2);
+  --chip-active-border: rgba(99, 102, 241, 0.5);
+  --chip-active-color: #818CF8;
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-border: rgba(255, 255, 255, 0.12);
+  --balance-gradient: linear-gradient(135deg, #ffffff, rgba(255, 255, 255, 0.65));
+  --badge-bg: rgba(255, 255, 255, 0.06);
+  --badge-color: rgba(255, 255, 255, 0.4);
+  --addr-color: rgba(255, 255, 255, 0.85);
+  --action-label: rgba(255, 255, 255, 0.75);
+  --action-tap: rgba(255, 255, 255, 0.06);
+  --fab-bg: rgba(255, 255, 255, 0.1);
+  --fab-border: rgba(255, 255, 255, 0.15);
+  --theme-btn-bg: rgba(255, 255, 255, 0.08);
+  --theme-btn-border: rgba(255, 255, 255, 0.14);
+  --theme-btn-color: rgba(255, 255, 255, 0.7);
+  --detach-bg: rgba(239, 68, 68, 0.15);
+  --detach-border: rgba(239, 68, 68, 0.3);
+  --detach-color: #FCA5A5;
+  --delegate-info-bg: rgba(99, 102, 241, 0.08);
+  --delegate-info-border: rgba(99, 102, 241, 0.2);
+  --payer-hint-bg: rgba(99, 102, 241, 0.1);
+  --payer-hint-color: #818CF8;
+  --dashed-border: rgba(255, 255, 255, 0.18);
+  --cancel-bg: rgba(255, 255, 255, 0.06);
+  --cancel-border: rgba(255, 255, 255, 0.1);
+  --cancel-color: rgba(255, 255, 255, 0.6);
+  --bal-bg: rgba(255, 255, 255, 0.04);
+  --none-color: rgba(255, 255, 255, 0.3);
+  --tx-link-color: #818CF8;
+  --msg-bg: rgba(255, 255, 255, 0.04);
+
+  /* layout */
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(180deg, #0D0D1A 0%, #141428 100%);
-  color: #ffffff;
+  background: var(--bg);
+  color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
   position: relative;
   overflow-x: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ══════════════════════════════════════════
+   CSS Variables — Light
+   ══════════════════════════════════════════ */
+.phoneLight {
+  --bg: linear-gradient(180deg, #F0F2FF 0%, #E8EBFF 100%);
+  --text: #1D1D1F;
+  --text-muted: #6E6E73;
+  --text-faint: #AEAEB2;
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-border: rgba(0, 0, 0, 0.07);
+  --btn-bg: rgba(0, 0, 0, 0.05);
+  --btn-border: rgba(0, 0, 0, 0.1);
+  --btn-hover-bg: rgba(0, 0, 0, 0.09);
+  --sheet-bg: #FFFFFF;
+  --sheet-border: rgba(0, 0, 0, 0.08);
+  --handle: rgba(0, 0, 0, 0.12);
+  --overlay: rgba(0, 0, 0, 0.4);
+  --chip-bg: rgba(0, 0, 0, 0.04);
+  --chip-border: rgba(0, 0, 0, 0.1);
+  --chip-color: #3C3C43;
+  --chip-active-bg: rgba(99, 102, 241, 0.1);
+  --chip-active-border: rgba(99, 102, 241, 0.4);
+  --chip-active-color: #4F46E5;
+  --input-bg: rgba(0, 0, 0, 0.04);
+  --input-border: rgba(0, 0, 0, 0.1);
+  --balance-gradient: linear-gradient(135deg, #1D1D1F, rgba(29, 29, 31, 0.7));
+  --badge-bg: rgba(0, 0, 0, 0.05);
+  --badge-color: #6E6E73;
+  --addr-color: #1D1D1F;
+  --action-label: #3C3C43;
+  --action-tap: rgba(0, 0, 0, 0.05);
+  --fab-bg: rgba(255, 255, 255, 0.7);
+  --fab-border: rgba(0, 0, 0, 0.1);
+  --theme-btn-bg: rgba(0, 0, 0, 0.05);
+  --theme-btn-border: rgba(0, 0, 0, 0.1);
+  --theme-btn-color: #3C3C43;
+  --detach-bg: rgba(239, 68, 68, 0.08);
+  --detach-border: rgba(239, 68, 68, 0.2);
+  --detach-color: #DC2626;
+  --delegate-info-bg: rgba(99, 102, 241, 0.05);
+  --delegate-info-border: rgba(99, 102, 241, 0.15);
+  --payer-hint-bg: rgba(99, 102, 241, 0.08);
+  --payer-hint-color: #4F46E5;
+  --dashed-border: rgba(0, 0, 0, 0.15);
+  --cancel-bg: rgba(0, 0, 0, 0.04);
+  --cancel-border: rgba(0, 0, 0, 0.08);
+  --cancel-color: #6E6E73;
+  --bal-bg: rgba(0, 0, 0, 0.03);
+  --none-color: #AEAEB2;
+  --tx-link-color: #4F46E5;
+  --msg-bg: rgba(0, 0, 0, 0.03);
 }
 
 /* ── 内容居中容器 ── */
@@ -19,48 +124,18 @@
 }
 
 @media (min-width: 768px) {
-  .inner {
-    max-width: 640px;
-    padding: 0 24px;
-  }
-
-  .statusBar {
-    padding-top: 32px;
-  }
-
-  .balanceCard {
-    padding: 36px 32px;
-  }
-
-  .balanceAmount {
-    font-size: 56px;
-  }
-
-  .actions {
-    gap: 16px;
-    justify-content: center;
-    padding: 8px 0 32px;
-  }
-
-  .actionCard {
-    min-width: 120px;
-  }
-
-  .actionIcon {
-    width: 72px;
-    height: 72px;
-    font-size: 32px;
-  }
+  .inner { max-width: 640px; padding: 0 24px; }
+  .statusBar { padding-top: 32px; }
+  .balanceCard { padding: 36px 32px; }
+  .balanceAmount { font-size: 56px; }
+  .actions { gap: 16px; justify-content: center; padding: 8px 0 32px; }
+  .actionCard { min-width: 120px; }
+  .actionIcon { width: 72px; height: 72px; font-size: 32px; }
 }
 
 @media (min-width: 1024px) {
-  .inner {
-    max-width: 800px;
-  }
-
-  .actions {
-    gap: 24px;
-  }
+  .inner { max-width: 800px; }
+  .actions { gap: 24px; }
 }
 
 /* ── 顶部状态栏 ── */
@@ -75,17 +150,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
   border-radius: 24px;
   padding: 6px 12px 6px 6px;
   cursor: pointer;
-  color: #fff;
+  color: var(--text);
   transition: background 0.15s;
 }
-.accountBtn:active {
-  background: rgba(255, 255, 255, 0.14);
-}
+.accountBtn:active { background: var(--btn-hover-bg); }
 
 .avatar {
   width: 28px;
@@ -104,26 +177,44 @@
   font-size: 13px;
   font-weight: 500;
   font-family: 'SF Mono', 'Courier New', monospace;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--addr-color);
 }
 
 .chevron {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-faint);
   margin-left: 2px;
 }
 
 .notConnected {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   padding: 8px 12px;
 }
+
+/* 主题切换按钮 */
+.themeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--theme-btn-bg);
+  border: 1px solid var(--theme-btn-border);
+  color: var(--theme-btn-color);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.themeBtn:active { background: var(--btn-hover-bg); }
 
 /* ── 余额卡片 ── */
 .balanceCard {
   margin: 20px 20px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 24px;
   padding: 28px 24px 24px;
   text-align: center;
@@ -132,7 +223,7 @@
 
 .balanceLabel {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
   margin-bottom: 10px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -142,7 +233,7 @@
   font-size: 44px;
   font-weight: 700;
   letter-spacing: -0.03em;
-  background: linear-gradient(135deg, #ffffff, rgba(255, 255, 255, 0.65));
+  background: var(--balance-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -155,8 +246,8 @@
   align-items: center;
   gap: 5px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--badge-color);
+  background: var(--badge-bg);
   border-radius: 8px;
   padding: 4px 10px;
 }
@@ -189,9 +280,7 @@
   transition: background 0.15s;
   min-width: 80px;
 }
-.actionCard:active {
-  background: rgba(255, 255, 255, 0.06);
-}
+.actionCard:active { background: var(--action-tap); }
 
 .actionIcon {
   width: 62px;
@@ -201,20 +290,20 @@
   align-items: center;
   justify-content: center;
   font-size: 28px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 .actionLabel {
   font-size: 13px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--action-label);
 }
 
-/* ── Overlay 蒙层 ── */
+/* ── Overlay ── */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--overlay);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -222,9 +311,9 @@
   backdrop-filter: blur(4px);
 }
 
-/* ── 登录 Modal (居中弹出) ── */
+/* ── 登录 Modal ── */
 .modal {
-  background: #1A1A2E;
+  background: var(--sheet-bg);
   border-radius: 24px;
   padding: 36px 24px 28px;
   width: calc(100% - 48px);
@@ -235,25 +324,21 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--sheet-border);
 }
 
-.modalEmoji {
-  font-size: 52px;
-  line-height: 1;
-  margin-bottom: 4px;
-}
+.modalEmoji { font-size: 52px; line-height: 1; margin-bottom: 4px; }
 
 .modalTitle {
   font-size: 20px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text);
   margin: 0;
 }
 
 .modalDesc {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   margin: 0;
   line-height: 1.6;
 }
@@ -269,39 +354,42 @@
   font-weight: 600;
   cursor: pointer;
   margin-top: 8px;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
   transition: opacity 0.15s;
 }
-.connectBtn:active {
-  opacity: 0.85;
-}
+.connectBtn:active { opacity: 0.85; }
 
 .cancelBtn {
   width: 100%;
   padding: 14px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--cancel-bg);
+  border: 1px solid var(--cancel-border);
   border-radius: 14px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--cancel-color);
   font-size: 15px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
-/* ── 账户切换底部弹出 ── */
-.bottomSheet {
-  background: #1A1A2E;
+/* ── 底部弹出 Sheet ── */
+.bottomSheet, .testSheet {
+  background: var(--sheet-bg);
   border-radius: 24px 24px 0 0;
   padding: 12px 20px 44px;
   width: 100%;
   max-width: 390px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--sheet-border);
+}
+
+.testSheet {
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 .sheetHandle {
   width: 36px;
   height: 4px;
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--handle);
   border-radius: 2px;
   margin: 0 auto 20px;
 }
@@ -309,22 +397,23 @@
 .sheetTitle {
   font-size: 16px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text);
   margin: 0 0 16px;
 }
 
+/* ── 账户切换 ── */
 .accountItem {
   display: flex;
   align-items: center;
   gap: 12px;
   width: 100%;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
   border-radius: 14px;
   cursor: pointer;
   margin-bottom: 8px;
-  color: #fff;
+  color: var(--text);
   transition: background 0.15s;
 }
 .accountItemActive {
@@ -357,7 +446,7 @@
   font-size: 13px;
   font-weight: 500;
   font-family: 'SF Mono', 'Courier New', monospace;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--addr-color);
 }
 
 .accountBadge {
@@ -365,44 +454,23 @@
   padding: 2px 8px;
   background: rgba(99, 102, 241, 0.25);
   border-radius: 6px;
-  color: #818CF8;
+  color: var(--chip-active-color);
 }
 
 .addAccountBtn {
   width: 100%;
   padding: 14px;
   background: none;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border: 1px dashed var(--dashed-border);
   border-radius: 14px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
   font-size: 14px;
   cursor: pointer;
   margin-top: 4px;
   transition: border-color 0.15s;
 }
-.addAccountBtn:active {
-  border-color: rgba(255, 255, 255, 0.35);
-}
 
-/* ── 侧边栏内容样式 ── */
-.sidebarTitle {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 16px;
-}
-
-.sidebarCard {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 12px;
-}
-
-/* ── 右下角测试浮动按钮 ── */
+/* ── 测试浮动按钮 ── */
 .testFab {
   position: fixed;
   right: 20px;
@@ -410,8 +478,8 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--fab-bg);
+  border: 1px solid var(--fab-border);
   font-size: 18px;
   cursor: pointer;
   display: flex;
@@ -421,22 +489,9 @@
   transition: background 0.15s;
   z-index: 50;
 }
-.testFab:active {
-  background: rgba(255, 255, 255, 0.18);
-}
+.testFab:active { background: var(--btn-hover-bg); }
 
-/* ── 测试面板底部弹出 ── */
-.testSheet {
-  background: #1A1A2E;
-  border-radius: 24px 24px 0 0;
-  padding: 12px 20px 44px;
-  width: 100%;
-  max-width: 390px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  max-height: 85vh;
-  overflow-y: auto;
-}
-
+/* ── 测试面板内容 ── */
 .testHeader {
   display: flex;
   align-items: center;
@@ -447,48 +502,42 @@
 .testClose {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   font-size: 16px;
   cursor: pointer;
   padding: 4px 8px;
 }
 
-.testSection {
-  margin-bottom: 16px;
-}
+.testSection { margin-bottom: 16px; }
 
 .testLabel {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-faint);
   margin-bottom: 8px;
 }
 
-.testRow {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+.testRow { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .testChip {
   padding: 7px 16px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--chip-border);
+  background: var(--chip-bg);
+  color: var(--chip-color);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.15s;
 }
 .testChipActive {
-  background: rgba(99, 102, 241, 0.2);
-  border-color: rgba(99, 102, 241, 0.5);
-  color: #818CF8;
+  background: var(--chip-active-bg);
+  border-color: var(--chip-active-border);
+  color: var(--chip-active-color);
 }
 
 .testBalances {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bal-bg);
   border-radius: 12px;
   padding: 12px;
   display: flex;
@@ -500,50 +549,41 @@
   display: flex;
   justify-content: space-between;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
 }
 .testBalRow strong {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text);
   font-weight: 600;
 }
 
-.testActions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+.testActions { display: flex; flex-direction: column; gap: 8px; }
 
 .testBtn {
   width: 100%;
   padding: 13px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
   border-radius: 12px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--chip-color);
   font-size: 14px;
   cursor: pointer;
   transition: background 0.15s;
 }
-.testBtn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-.testBtn:not(:disabled):active {
-  background: rgba(255, 255, 255, 0.1);
-}
+.testBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.testBtn:not(:disabled):active { background: var(--btn-hover-bg); }
 
 .testBtnPrimary {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
-  border-color: rgba(99, 102, 241, 0.4);
-  color: #A5B4FC;
+  background: var(--chip-active-bg);
+  border-color: var(--chip-active-border);
+  color: var(--chip-active-color);
   font-weight: 600;
 }
 
 .testMsg {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--msg-bg);
   border-radius: 10px;
   word-break: break-all;
   margin-bottom: 8px;
@@ -553,7 +593,7 @@
   display: block;
   text-align: center;
   font-size: 13px;
-  color: #818CF8;
+  color: var(--tx-link-color);
   text-decoration: none;
   padding: 8px;
 }
@@ -561,10 +601,10 @@
 /* ── 委托管理 ── */
 .testPayerHint {
   font-size: 12px;
-  color: #818CF8;
+  color: var(--payer-hint-color);
   margin-bottom: 6px;
   padding: 4px 8px;
-  background: rgba(99, 102, 241, 0.1);
+  background: var(--payer-hint-bg);
   border-radius: 6px;
 }
 
@@ -573,28 +613,28 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 10px;
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: var(--delegate-info-bg);
+  border: 1px solid var(--delegate-info-border);
   border-radius: 10px;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text-muted);
   margin-bottom: 8px;
 }
 
 .testDelegateDetach {
   font-size: 12px;
   padding: 4px 10px;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--detach-bg);
+  border: 1px solid var(--detach-border);
   border-radius: 6px;
-  color: #FCA5A5;
+  color: var(--detach-color);
   cursor: pointer;
 }
 .testDelegateDetach:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .testDelegateNone {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--none-color);
   margin-bottom: 8px;
 }
 
@@ -606,13 +646,13 @@
 
 .testDelegateInput {
   flex: 1;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: 10px;
-  color: #fff;
+  color: var(--text);
   font-size: 12px;
   padding: 8px 10px;
   font-family: 'SF Mono', monospace;
   min-width: 0;
 }
-.testDelegateInput::placeholder { color: rgba(255,255,255,0.25); }
+.testDelegateInput::placeholder { color: var(--text-faint); }

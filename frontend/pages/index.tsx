@@ -87,10 +87,36 @@ declare global {
 }
 
 type PendingAction = 'omnigas' | 'transfer' | 'swap' | ''
+type ThemeMode = 'system' | 'dark' | 'light'
+
+const THEME_ICONS: Record<ThemeMode, string> = { system: '⚙️', dark: '🌙', light: '☀️' }
+const THEME_ORDER: ThemeMode[] = ['system', 'dark', 'light']
 
 // ── 组件 ─────────────────────────────────────────────
 const WalletHome: NextPage = () => {
   const provider = useActiveProvider()
+
+  // 主题
+  const [themeMode, setThemeMode] = useState<ThemeMode>('system')
+  const [systemDark, setSystemDark] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('wallet-theme') as ThemeMode | null
+    if (saved && THEME_ORDER.includes(saved)) setThemeMode(saved)
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    setSystemDark(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setSystemDark(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  const isLight = themeMode === 'light' || (themeMode === 'system' && !systemDark)
+
+  const cycleTheme = useCallback(() => {
+    const next = THEME_ORDER[(THEME_ORDER.indexOf(themeMode) + 1) % THEME_ORDER.length]
+    setThemeMode(next)
+    localStorage.setItem('wallet-theme', next)
+  }, [themeMode])
 
   // 钱包账户
   const [accounts, setAccounts] = useState<string[]>([])
@@ -352,7 +378,7 @@ const WalletHome: NextPage = () => {
 
   // ── JSX ──────────────────────────────────────────────
   return (
-    <div className={styles.phone}>
+    <div className={[styles.phone, isLight ? styles.phoneLight : ''].join(' ')}>
       <Head>
         <title>OmniGas Wallet</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
@@ -372,6 +398,15 @@ const WalletHome: NextPage = () => {
           ) : (
             <span className={styles.notConnected}>未连接</span>
           )}
+
+          {/* 右上角主题切换 */}
+          <button
+            className={styles.themeBtn}
+            onClick={cycleTheme}
+            title={`当前：${themeMode === 'system' ? '跟随系统' : themeMode === 'dark' ? '深色' : '浅色'}`}
+          >
+            {THEME_ICONS[themeMode]}
+          </button>
         </div>
 
         {/* 余额卡片 */}
