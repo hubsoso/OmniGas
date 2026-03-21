@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { createWalletClient, http, parseAbi } from 'viem'
+import { createWalletClient, parseAbi } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { sepolia } from 'viem/chains'
+import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../../lib/rpc'
 
 const USDC_ABI = parseAbi(['function mint(address to, uint256 amount) external'])
 const claimed = new Set<string>()
@@ -14,7 +15,7 @@ const walletClient = relayerKey
   ? createWalletClient({
       account: privateKeyToAccount(relayerKey),
       chain,
-      transport: http(rpcUrl),
+      transport: createFallbackTransport(SEPOLIA_RPC_URLS),
     })
   : null
 
@@ -59,6 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       txHash,
     })
   } catch (error: any) {
+    console.error('[faucet] error:', error)
     return res.status(500).json({
       error: error?.shortMessage || error?.message || 'Unknown error',
     })

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { createPublicClient, http, parseAbi } from 'viem'
+import { createPublicClient, parseAbi } from 'viem'
 import { sepolia } from 'viem/chains'
+import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../../lib/rpc'
 
 const VAULT_ABI = parseAbi(['function balanceOf(address token, address user) view returns (uint256)'])
 const NFT_ABI = parseAbi(['function balanceOf(address owner) view returns (uint256)'])
@@ -9,7 +10,7 @@ const chain = sepolia
 
 const publicClient = createPublicClient({
   chain,
-  transport: http(process.env.RPC_URL),
+  transport: createFallbackTransport(SEPOLIA_RPC_URLS),
 })
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -60,6 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       nftCount: nftCount.toString(),
     })
   } catch (error: any) {
+    console.error('[balance] error:', error)
     return res.status(500).json({
       error: error?.shortMessage || error?.message || 'Unknown error',
     })
