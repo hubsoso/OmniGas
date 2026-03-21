@@ -346,17 +346,21 @@ const WalletHome: NextPage = () => {
     if (!current || !vaultAddress) return
     setAuthorizingSubAccount(subAccount)
     try {
-      // 先检查子账户是否已经绑定了其他 payer
-      const existingPayer = await publicClient.readContract({
-        address: vaultAddress,
-        abi: VAULT_DELEGATE_ABI,
-        functionName: 'payerOf',
-        args: [subAccount as `0x${string}`],
-      }) as string
-      const zero = '0x0000000000000000000000000000000000000000'
-      if (existingPayer !== zero && existingPayer.toLowerCase() !== current.toLowerCase()) {
-        alert(`该子账户已绑定其他代付方 ${existingPayer.slice(0, 10)}...\n需要子账户先解除绑定（detach）才能重新授权`)
-        return
+      // 前置检查：子账户是否已绑定其他 payer（失败则跳过，让合约自己校验）
+      try {
+        const existingPayer = await publicClient.readContract({
+          address: vaultAddress,
+          abi: VAULT_DELEGATE_ABI,
+          functionName: 'payerOf',
+          args: [subAccount as `0x${string}`],
+        }) as string
+        const zero = '0x0000000000000000000000000000000000000000'
+        if (existingPayer !== zero && existingPayer.toLowerCase() !== current.toLowerCase()) {
+          alert(`该子账户已绑定其他代付方 ${existingPayer.slice(0, 10)}...\n需要子账户先解除绑定（detach）才能重新授权`)
+          return
+        }
+      } catch {
+        // RPC 查询失败，忽略前置检查，继续尝试授权
       }
       const wc = await getWalletClient()
       const hash = await wc.writeContract({
