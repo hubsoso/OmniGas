@@ -1,8 +1,9 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
+import dynamic from 'next/dynamic'
 import { FiGlobe } from 'react-icons/fi'
-import { SupportedLocale, SUPPORTED_LOCALES, SwapWidget } from '@uniswap/widgets'
-import type { TokenInfo } from '@uniswap/widgets'
+import { SUPPORTED_LOCALES } from '@uniswap/widgets'
+import type { SupportedLocale, TokenInfo, SwapWidgetProps } from '@uniswap/widgets'
 import { createPublicClient, createWalletClient, custom, parseAbi } from 'viem'
 import { mainnet, sepolia } from 'viem/chains'
 
@@ -16,6 +17,11 @@ import { useActiveProvider } from '../connectors'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { JSON_RPC_URL } from '../constants'
 import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../lib/rpc'
+
+const SwapWidget = dynamic<SwapWidgetProps>(
+  () => import('@uniswap/widgets').then((mod) => mod.SwapWidget),
+  { ssr: false }
+)
 
 const UNI = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
 const USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
@@ -478,7 +484,7 @@ const Home: NextPage = () => {
                     type="button"
                     className={omniGasStyles.secondaryButton}
                     onClick={onClaimUsdc}
-                    disabled={claiming || !walletAddress || !hasRelayConfig}
+                    disabled={claiming}
                   >
                     {claiming ? '领取中...' : '领取测试 USDC'}
                   </button>
@@ -486,7 +492,7 @@ const Home: NextPage = () => {
                     type="button"
                     className={omniGasStyles.secondaryButton}
                     onClick={onDeposit}
-                    disabled={depositing || !walletAddress || !selectedToken?.address || !vaultAddress}
+                    disabled={depositing}
                   >
                     {depositing ? '充值中...' : `充值 ${selectedToken?.label || ''}`}
                   </button>
@@ -494,7 +500,7 @@ const Home: NextPage = () => {
                     type="button"
                     className={omniGasStyles.actionButton}
                     onClick={onGaslessMint}
-                    disabled={loading || !walletAddress || !selectedToken?.address || !hasRelayConfig}
+                    disabled={loading}
                   >
                     {loading ? 'Gasless Mint 中...' : 'Gasless Mint'}
                   </button>

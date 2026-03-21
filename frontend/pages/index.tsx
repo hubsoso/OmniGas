@@ -124,7 +124,16 @@ const WalletHome: NextPage = () => {
 
   const executeAction = useCallback((action: PendingAction) => {
     if (action === 'swap') window.location.href = '/swap'
-    // transfer / omnigas 在此扩展
+    if (action === 'omnigas') {
+      setShowTest(true)
+      setMsg('')
+      setTxHash('')
+    }
+    if (action === 'transfer') {
+      setShowTest(true)
+      setMsg('转账功能还在接入中，当前可先使用下方测试面板体验 OmniGas 流程。')
+      setTxHash('')
+    }
   }, [])
 
   const connectWallet = useCallback(async () => {
@@ -405,21 +414,21 @@ const WalletHome: NextPage = () => {
                   <button
                     className={styles.testBtn}
                     onClick={onClaim}
-                    disabled={claiming || !current || !hasRelayConfig}
+                    disabled={claiming}
                   >
                     {claiming ? '领取中...' : '领取测试 USDC'}
                   </button>
                   <button
                     className={styles.testBtn}
                     onClick={onDeposit}
-                    disabled={depositing || !current || !selectedToken?.address || gasToken === 'ETH'}
+                    disabled={depositing}
                   >
                     {depositing ? '充值中...' : `充值 ${selectedToken?.label || '—'}`}
                   </button>
                   <button
                     className={[styles.testBtn, styles.testBtnPrimary].join(' ')}
                     onClick={onMint}
-                    disabled={minting || !current || gasToken === 'ETH' || !hasRelayConfig}
+                    disabled={minting}
                   >
                     {minting ? 'Mint 中...' : 'Gasless Mint ⚡'}
                   </button>
