@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import { createPublicClient, createWalletClient, custom, parseAbi } from 'viem'
+import { createPublicClient, createWalletClient, custom, parseAbi, parseUnits } from 'viem'
 import { sepolia, mainnet } from 'viem/chains'
 import { useCallback, useEffect, useState } from 'react'
 import { useActiveProvider } from '../connectors'
@@ -141,7 +141,7 @@ const WalletHome: NextPage = () => {
   const [showOmnigas, setShowOmnigas] = useState(false)
   const [omnigasStep, setOmnigasStep] = useState<'list' | 'detail'>('list')
   const [omnigasToken, setOmnigasToken] = useState<OmnigasToken>('USDC')
-  const [omnigasAmount, setOmnigasAmount] = useState(10)
+  const [omnigasAmount, setOmnigasAmount] = useState<bigint>(10n)
   const [omnigasLoading, setOmnigasLoading] = useState(false)
   const [omnigasMsg, setOmnigasMsg] = useState('')
   const [omnigazTxHash, setOmnigazTxHash] = useState('')
@@ -237,13 +237,11 @@ const WalletHome: NextPage = () => {
   }, [current, isSepoliaMode, showTest, showOmnigas, refreshBalances, refreshPayer])
 
   const getWalletClient = useCallback(async () => {
-    if (!provider) throw new Error('请先连接 MetaMask')
-    const network = await provider.getNetwork()
-    if (network.chainId !== CHAIN_ID) throw new Error(`请切换到 Sepolia (${CHAIN_ID})`)
-    const externalProvider = (provider as any).provider
-    if (!externalProvider) throw new Error('Wallet provider unavailable')
-    return createWalletClient({ chain: APP_CHAIN, transport: custom(externalProvider) })
-  }, [provider])
+    if (!window.ethereum) throw new Error('请先安装 MetaMask')
+    const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+    if (Number(chainId) !== CHAIN_ID) throw new Error(`请切换到 Sepolia (${CHAIN_ID})`)
+    return createWalletClient({ chain: APP_CHAIN, transport: custom(window.ethereum) })
+  }, [])
 
   const onAuthorize = useCallback(async () => {
     if (!current || !delegateInput || !vaultAddress) { setMsg('请输入 wallet 地址'); return }
@@ -324,13 +322,13 @@ const WalletHome: NextPage = () => {
         body: JSON.stringify({ userAddress: current }),
       })
       if (!response.ok) throw new Error(data?.error || 'Faucet 失败')
+      setOmnigasLoading(false)
       setOmnigasMsg('已领取 10 USDC 测试币')
       setOmnigazTxHash(data.txHash)
-      await refreshBalances(current)
+      refreshBalances(current)
     } catch (e: any) {
-      setOmnigasMsg(e.message || 'Faucet 失败')
-    } finally {
       setOmnigasLoading(false)
+      setOmnigasMsg(e.message || 'Faucet 失败')
     }
   }, [current, refreshBalances])
 
@@ -338,8 +336,8 @@ const WalletHome: NextPage = () => {
     if (!current || !vaultAddress) { setOmnigasMsg('请先连接钱包'); return }
     const cfg = tokenConfig[omnigasToken]
     if (!cfg?.address) { setOmnigasMsg('代币未配置'); return }
-    const decimals = omnigasToken === 'USDC' ? 6n : 18n
-    const amountWei = BigInt(omnigasAmount) * (10n ** decimals)
+    const decimals = omnigasToken === 'USDC' ? 6 : 18
+    const amountWei = parseUnits(String(omnigasAmount), decimals)
     setOmnigasLoading(true); setOmnigasMsg(''); setOmnigazTxHash('')
     try {
       const wc = await getWalletClient()
@@ -359,13 +357,13 @@ const WalletHome: NextPage = () => {
         args: [cfg.address, amountWei],
       })
       await publicClient.waitForTransactionReceipt({ hash: depositHash })
+      setOmnigasLoading(false)
       setOmnigasMsg('充值成功！')
       setOmnigazTxHash(depositHash)
-      await refreshBalances(current)
+      refreshBalances(current)
     } catch (e: any) {
-      setOmnigasMsg(e.shortMessage || e.message || '充值失败')
-    } finally {
       setOmnigasLoading(false)
+      setOmnigasMsg(e.shortMessage || e.message || '充值失败')
     }
   }, [current, omnigasToken, omnigasAmount, getWalletClient, refreshBalances])
 
@@ -477,8 +475,12 @@ const WalletHome: NextPage = () => {
 
         {/* 余额卡片 */}
         <div className={styles.balanceCard}>
-          <div className={styles.balanceLabel}>总资产</div>
-          <div className={styles.balanceAmount}>$0.00</div>
+          <div className={styles.balanceLabel}>Vault 总资产</div>
+          <div className={styles.balanceAmount}>
+            ${current && isSepoliaMode
+              ? (parseFloat(balances.usdcBalance || '0') + parseFloat(balances.boxBalance || '0')).toFixed(2)
+              : '0.00'}
+          </div>
           <div className={styles.networkBadge}>
             <span className={styles.networkDot} />
             Sepolia Testnet
@@ -563,7 +565,7 @@ const WalletHome: NextPage = () => {
               <button
                 key={t.id}
                 className={styles.omnigasTokenRow}
-                onClick={() => { setOmnigasToken(t.id); setOmnigasStep('detail'); setOmnigasAmount(10); setOmnigasMsg(''); setOmnigazTxHash('') }}
+                onClick={() => { setOmnigasToken(t.id); setOmnigasStep('detail'); setOmnigasAmount(10n); setOmnigasMsg(''); setOmnigazTxHash('') }}
               >
                 <div className={styles.omnigasTokenIcon} style={{ background: t.color }}>{t.label[0]}</div>
                 <div className={styles.omnigasTokenInfo}>
@@ -617,14 +619,14 @@ const WalletHome: NextPage = () => {
                 </div>
               </div>
               <div className={styles.omnigasAmounts}>
-                {[5, 10, 200].map((amt) => (
+                {[5n, 10n, 200n].map((amt) => (
                   <button
-                    key={amt}
+                    key={amt.toString()}
                     className={[styles.omnigasAmountChip, omnigasAmount === amt ? styles.omnigasAmountChipActive : ''].join(' ')}
                     onClick={() => setOmnigasAmount(amt)}
                   >
-                    <span className={styles.omnigasAmountMain}>{amt} {omnigasToken}</span>
-                    <span className={styles.omnigasAmountSub}>${amt}</span>
+                    <span className={styles.omnigasAmountMain}>{String(amt)} {omnigasToken}</span>
+                    <span className={styles.omnigasAmountSub}>${String(amt)}</span>
                   </button>
                 ))}
               </div>
@@ -634,7 +636,7 @@ const WalletHome: NextPage = () => {
             <div className={styles.omnigasInfoRows}>
               <div className={styles.omnigasInfoRow}>
                 <span>充值金额</span>
-                <strong>{omnigasAmount} {omnigasToken}</strong>
+                <strong>{String(omnigasAmount)} {omnigasToken}</strong>
               </div>
               <div className={styles.omnigasInfoRow}>
                 <span>预计 Gas 费</span>
