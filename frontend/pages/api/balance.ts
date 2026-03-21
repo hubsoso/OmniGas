@@ -5,6 +5,8 @@ import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../../lib/rpc'
 
 const VAULT_ABI = parseAbi([
   'function balanceOf(address token, address user) view returns (uint256)',
+])
+const VAULT_PAYER_ABI = parseAbi([
   'function effectivePayer(address wallet) view returns (address)',
 ])
 const NFT_ABI = parseAbi(['function balanceOf(address owner) view returns (uint256)'])
@@ -37,13 +39,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // 先查实际付款方
-    const payer = await publicClient.readContract({
-      address: vaultAddress,
-      abi: VAULT_ABI,
-      functionName: 'effectivePayer',
-      args: [address as `0x${string}`],
-    })
+    const userAddr = address as `0x${string}`
+
+    // 尝试获取实际付款方（合约可能不支持），降级为用户自己
+    let payer: `0x${string}` = userAddr
+    try {
+      const payerRaw = await publicClient.readContract({
+        address: vaultAddress,
+        abi: VAULT_PAYER_ABI,
+        functionName: 'effectivePayer',
+        args: [userAddr],
+      })
+      const zero = '0x0000000000000000000000000000000000000000'
+      if (payerRaw && payerRaw.toLowerCase() !== zero) {
+        payer = payerRaw as `0x${string}`
+      }
+    } catch {
+      // effectivePayer 不存在或调用失败，使用用户地址
+    }
 
     const [usdcRaw, boxRaw, nftCount] = await Promise.all([
       publicClient.readContract({
@@ -62,7 +75,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         address: nftAddress,
         abi: NFT_ABI,
         functionName: 'balanceOf',
-        args: [address as `0x${string}`],
+        args: [userAddr],
       }),
     ])
 
