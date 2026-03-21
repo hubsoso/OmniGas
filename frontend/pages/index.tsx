@@ -353,6 +353,7 @@ const WalletHome: NextPage = () => {
         abi: VAULT_DELEGATE_ABI,
         functionName: 'authorize',
         args: [subAccount as `0x${string}`],
+        gas: 80000n,
       })
       await publicClient.waitForTransactionReceipt({ hash })
       await refreshSubAccountAuthStatus()
@@ -374,6 +375,7 @@ const WalletHome: NextPage = () => {
         abi: VAULT_DELEGATE_ABI,
         functionName: 'authorize',
         args: [delegateInput as `0x${string}`],
+        gas: 80000n,
       })
       await publicClient.waitForTransactionReceipt({ hash })
       setMsg(`已授权 ${delegateInput.slice(0, 10)}...`)
@@ -397,6 +399,7 @@ const WalletHome: NextPage = () => {
         abi: VAULT_DELEGATE_ABI,
         functionName: 'revoke',
         args: [delegateInput as `0x${string}`],
+        gas: 80000n,
       })
       await publicClient.waitForTransactionReceipt({ hash })
       setMsg(`已撤销 ${delegateInput.slice(0, 10)}...`)
@@ -420,6 +423,7 @@ const WalletHome: NextPage = () => {
         abi: VAULT_DELEGATE_ABI,
         functionName: 'detach',
         args: [],
+        gas: 80000n,
       })
       await publicClient.waitForTransactionReceipt({ hash })
       setMyPayer('')
@@ -473,6 +477,7 @@ const WalletHome: NextPage = () => {
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [vaultAddress, amountWei],
+        gas: 80000n,
       })
       await publicClient.waitForTransactionReceipt({ hash: approveHash })
       const depositHash = await wc.writeContract({
@@ -481,6 +486,7 @@ const WalletHome: NextPage = () => {
         abi: VAULT_ABI,
         functionName: 'deposit',
         args: [cfg.address, amountWei],
+        gas: 120000n,
       })
       await publicClient.waitForTransactionReceipt({ hash: depositHash })
       setOmnigasLoading(false)
@@ -546,6 +552,7 @@ const WalletHome: NextPage = () => {
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [vaultAddress, selectedToken.amount],
+        gas: 80000n,
       })
       await publicClient.waitForTransactionReceipt({ hash: approveHash })
       const depositHash = await wc.writeContract({
@@ -554,6 +561,7 @@ const WalletHome: NextPage = () => {
         abi: VAULT_ABI,
         functionName: 'deposit',
         args: [selectedToken.address, selectedToken.amount],
+        gas: 120000n,
       })
       await publicClient.waitForTransactionReceipt({ hash: depositHash })
       setMsg('充值成功')
