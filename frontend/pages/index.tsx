@@ -19,7 +19,7 @@ type NetworkMode = (typeof NETWORK_MODES)[number]
 const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 11155111)
 const APP_CHAIN = sepolia
 const EXPLORER_TX = 'https://sepolia.etherscan.io/tx/'
-const API_TIMEOUT = 15_000
+const API_TIMEOUT = 30_000
 
 const ERC20_ABI = parseAbi(['function approve(address spender, uint256 amount) external returns (bool)'])
 const VAULT_ABI = parseAbi(['function deposit(address token, uint256 amount) external'])
@@ -132,6 +132,7 @@ const WalletHome: NextPage = () => {
   const [gasToken, setGasToken] = useState<GasToken>('USDC')
   const [balances, setBalances] = useState({ usdcBalance: '0', boxBalance: '0', nftCount: '0', effectivePayer: '' })
   const [claiming, setClaiming] = useState(false)
+  const [claimingBox, setClaimingBox] = useState(false)
   const [depositing, setDepositing] = useState(false)
   const [minting, setMinting] = useState(false)
   const [msg, setMsg] = useState('')
@@ -319,18 +320,18 @@ const WalletHome: NextPage = () => {
       const { response, data } = await fetchWithTimeout('/api/faucet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userAddress: current }),
+        body: JSON.stringify({ userAddress: current, token: omnigasToken.toLowerCase() }),
       })
       if (!response.ok) throw new Error(data?.error || 'Faucet 失败')
       setOmnigasLoading(false)
-      setOmnigasMsg('已领取 10 USDC 测试币')
+      setOmnigasMsg(`已领取 10 ${omnigasToken} 测试币`)
       setOmnigazTxHash(data.txHash)
       refreshBalances(current)
     } catch (e: any) {
       setOmnigasLoading(false)
       setOmnigasMsg(e.message || 'Faucet 失败')
     }
-  }, [current, refreshBalances])
+  }, [current, omnigasToken, refreshBalances])
 
   const onOmnigasDeposit = useCallback(async () => {
     if (!current || !vaultAddress) { setOmnigasMsg('请先连接钱包'); return }
@@ -384,6 +385,26 @@ const WalletHome: NextPage = () => {
       setMsg(e.message || 'Faucet 失败')
     } finally {
       setClaiming(false)
+    }
+  }, [current, refreshBalances])
+
+  const onClaimBox = useCallback(async () => {
+    if (!current) { setMsg('请先连接钱包'); return }
+    setClaimingBox(true); setMsg(''); setTxHash('')
+    try {
+      const { response, data } = await fetchWithTimeout('/api/faucet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userAddress: current, token: 'box' }),
+      })
+      if (!response.ok) throw new Error(data?.error || 'Faucet 失败')
+      setMsg(`已领取 BOX`)
+      setTxHash(data.txHash)
+      refreshBalances(current)
+    } catch (e: any) {
+      setMsg(e.message || 'Faucet 失败')
+    } finally {
+      setClaimingBox(false)
     }
   }, [current, refreshBalances])
 
@@ -658,9 +679,9 @@ const WalletHome: NextPage = () => {
             )}
 
             {/* 领取测试币（Sepolia） */}
-            {isSepoliaMode && omnigasToken === 'USDC' && (
+            {isSepoliaMode && (
               <button className={styles.omnigasFaucetBtn} onClick={onOmniClaim} disabled={omnigasLoading}>
-                {omnigasLoading ? '处理中...' : '领取测试 USDC'}
+                {omnigasLoading ? '处理中...' : `领取测试 ${omnigasToken}`}
               </button>
             )}
 
@@ -786,9 +807,16 @@ const WalletHome: NextPage = () => {
                   <button
                     className={styles.testBtn}
                     onClick={onClaim}
-                    disabled={claiming}
+                    disabled={claiming || claimingBox}
                   >
                     {claiming ? '领取中...' : '领取测试 USDC'}
+                  </button>
+                  <button
+                    className={styles.testBtn}
+                    onClick={onClaimBox}
+                    disabled={claiming || claimingBox}
+                  >
+                    {claimingBox ? '领取中...' : '领取测试 BOX'}
                   </button>
                   <button
                     className={styles.testBtn}
