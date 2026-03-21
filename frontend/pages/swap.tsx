@@ -10,6 +10,7 @@ import '@uniswap/widgets/fonts.css'
 
 import { connectors, useActiveProvider } from '../connectors'
 import { JSON_RPC_URL } from '../constants'
+import { THEME_ORDER, type ThemeMode, useThemeMode } from '../lib/theme'
 import { useCallback, useEffect, useState } from 'react'
 
 const SwapWidget = dynamic<SwapWidgetProps>(
@@ -45,19 +46,14 @@ const WIDGET_TOKENS: TokenInfo[] = [
   },
 ]
 
-type ThemeMode = 'system' | 'dark' | 'light'
-const THEME_ORDER: ThemeMode[] = ['system', 'dark', 'light']
-
 const SwapPage: NextPage = () => {
   const provider = useActiveProvider()
   const { account } = useWeb3React()
   const router = useRouter()
-  const [themeMode, setThemeMode] = useState<ThemeMode>('system')
-  const [systemDark, setSystemDark] = useState(false)
+  const { themeMode, isLight, setThemeMode } = useThemeMode()
   const [providerChainId, setProviderChainId] = useState<number | null>(null)
 
   const widgetSupportsConnectedChain = providerChainId !== null && WIDGET_SUPPORTED_CHAIN_IDS.has(providerChainId)
-  const isLight = themeMode === 'light' || (themeMode === 'system' && !systemDark)
 
   const widgetTheme: Theme = isLight
     ? {
@@ -98,20 +94,6 @@ const SwapPage: NextPage = () => {
         fontFamilyCode: "'SF Mono', 'Courier New', monospace",
         tokenColorExtraction: false,
       }
-
-  useEffect(() => {
-    const saved = localStorage.getItem('wallet-theme') as ThemeMode | null
-    if (saved && THEME_ORDER.includes(saved)) {
-      setThemeMode(saved)
-    }
-
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    setSystemDark(mq.matches)
-    const handler = (event: MediaQueryListEvent) => setSystemDark(event.matches)
-    mq.addEventListener('change', handler)
-
-    return () => mq.removeEventListener('change', handler)
-  }, [])
 
   const connectMetaMask = useCallback(async () => {
     const [connector] = connectors[0]

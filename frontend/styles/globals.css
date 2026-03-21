@@ -1,15 +1,3 @@
-html,
-body {
-  background:
-    radial-gradient(circle at top left, rgba(157, 197, 143, 0.24), transparent 26%),
-    radial-gradient(circle at top right, rgba(231, 241, 228, 0.9), transparent 30%),
-    linear-gradient(180deg, #f9fcf7 0%, #f3f8f0 48%, #eef5eb 100%);
-  color: #173124;
-  font-family: 'Avenir Next', 'Segoe UI', sans-serif;
-  margin: 0;
-  padding: 0;
-}
-
 :root {
   --page-bg: #f5faf2;
   --surface: rgba(255, 255, 255, 0.82);
@@ -24,6 +12,37 @@ body {
   --accent-soft: #dbeedd;
   --shadow-soft: 0 22px 60px rgba(31, 73, 50, 0.08);
   --shadow-card: 0 16px 40px rgba(31, 73, 50, 0.1);
+}
+
+html,
+body {
+  background:
+    radial-gradient(circle at top left, rgba(157, 197, 143, 0.24), transparent 26%),
+    radial-gradient(circle at top right, rgba(231, 241, 228, 0.9), transparent 30%),
+    linear-gradient(180deg, #f9fcf7 0%, #f3f8f0 48%, #eef5eb 100%);
+  color: #173124;
+  font-family: 'Avenir Next', 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+html[data-theme='dark'],
+body[data-theme='dark'] {
+  background:
+    radial-gradient(circle at top left, rgba(75, 88, 154, 0.24), transparent 28%),
+    radial-gradient(circle at top right, rgba(42, 51, 92, 0.6), transparent 34%),
+    linear-gradient(180deg, #090b16 0%, #111528 52%, #151a31 100%);
+  color: #f5f7ff;
+}
+
+html[data-theme='light'],
+body[data-theme='light'] {
+  background:
+    radial-gradient(circle at top left, rgba(157, 197, 143, 0.24), transparent 26%),
+    radial-gradient(circle at top right, rgba(231, 241, 228, 0.9), transparent 30%),
+    linear-gradient(180deg, #f9fcf7 0%, #f3f8f0 48%, #eef5eb 100%);
+  color: #173124;
 }
 
 body::before {

@@ -7,10 +7,8 @@ import { sepolia } from 'viem/chains'
 import { useCallback, useEffect, useState } from 'react'
 import { connectors } from '../connectors'
 import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../lib/rpc'
+import { useThemeMode } from '../lib/theme'
 import styles from '../styles/Transfer.module.css'
-
-type ThemeMode = 'system' | 'dark' | 'light'
-const THEME_ORDER: ThemeMode[] = ['system', 'dark', 'light']
 
 const TOKENS_BY_NETWORK = {
   Sepolia: [
@@ -51,8 +49,7 @@ declare global {
 const TransferPage: NextPage = () => {
   const router = useRouter()
   const { account } = useWeb3React()
-  const [themeMode, setThemeMode] = useState<ThemeMode>('system')
-  const [systemDark, setSystemDark] = useState(false)
+  const { isLight } = useThemeMode()
   const [recipient, setRecipient] = useState('')
   const [amount, setAmount] = useState('')
   const [network] = useState('Sepolia')
@@ -72,21 +69,6 @@ const TransferPage: NextPage = () => {
     BOX: ZERO_BALANCE,
     ETH: ZERO_BALANCE,
   })
-
-  useEffect(() => {
-    const saved = localStorage.getItem('wallet-theme') as ThemeMode | null
-    if (saved && THEME_ORDER.includes(saved)) {
-      setThemeMode(saved)
-    }
-
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    setSystemDark(mq.matches)
-    const handler = (event: MediaQueryListEvent) => setSystemDark(event.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-
-  const isLight = themeMode === 'light' || (themeMode === 'system' && !systemDark)
 
   const connectWallet = useCallback(async () => {
     const [connector] = connectors[0]
