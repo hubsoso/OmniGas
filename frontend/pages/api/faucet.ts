@@ -5,8 +5,6 @@ import { sepolia } from 'viem/chains'
 import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../../lib/rpc'
 
 const MINT_ABI = parseAbi(['function mint(address to, uint256 amount) external'])
-const claimedUsdc = new Set<string>()
-const claimedBox = new Set<string>()
 
 const rpcUrl = process.env.RPC_URL
 const relayerKey = process.env.RELAYER_PRIVATE_KEY as `0x${string}` | undefined
@@ -36,11 +34,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const isBox = token === 'box'
-  const claimedSet = isBox ? claimedBox : claimedUsdc
-
-  if (claimedSet.has(userAddress.toLowerCase())) {
-    return res.status(400).json({ error: 'Already claimed' })
-  }
 
   try {
     const tokenAddress = (isBox
@@ -61,8 +54,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       args: [userAddress as `0x${string}`, amount],
       account: walletClient.account,
     })
-
-    claimedSet.add(userAddress.toLowerCase())
 
     return res.json({ success: true, txHash })
   } catch (error: any) {
