@@ -12,15 +12,12 @@ import omniGasStyles from '../styles/OmniGas.module.css'
 import DocumentationCards from '../components/DocumentationCards'
 import Web3Connectors from '../components/Web3Connectors'
 import { useActiveProvider } from '../connectors'
-import { sendGaslessTransaction } from '../lib/sendGaslessTransaction'
 import { useCallback, useRef, useState } from 'react'
 import { JSON_RPC_URL } from '../constants'
 
-const TOKEN_LIST = 'https://gateway.ipfs.io/ipns/tokens.uniswap.org'
+const TOKEN_LIST = 'https://tokens.coingecko.com/uniswap/all.json'
 const UNI = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
-const GAS_TOKENS = ['ETH', 'USDT', 'BOX'] as const
-const DEMO_SEPOLIA_PRIVATE_KEY =
-  '0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356' as `0x${string}`
+const GAS_TOKENS = ['ETH', 'USDC', 'BOX'] as const
 
 const Home: NextPage = () => {
   // When a user clicks "Connect your wallet" in the SwapWidget, this callback focuses the connectors.
@@ -44,9 +41,12 @@ const Home: NextPage = () => {
     setTxHash('')
 
     try {
-      const hash = await sendGaslessTransaction(DEMO_SEPOLIA_PRIVATE_KEY)
-      console.log('OmniGas gasless transaction hash:', hash)
-      setTxHash(hash)
+      // TODO: 前端同事在此接入 /api/relay，传入 userAddress 和 feeToken 地址
+      // const res = await fetch('/api/relay', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ userAddress, feeToken: TOKEN_ADDRESS[gasToken] }) })
+      // const data = await res.json()
+      // setTxHash(data.txHash)
+      throw new Error('待接入：请调用 /api/relay')
     } catch (error) {
       console.error('OmniGas gasless transaction failed:', error)
     } finally {
@@ -115,11 +115,11 @@ const Home: NextPage = () => {
                   {txHash ? (
                     <a
                       className={omniGasStyles.successLink}
-                      href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                      href={`https://sepolia.basescan.org/tx/${txHash}`}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      交易成功：https://sepolia.etherscan.io/tx/{txHash}
+                      交易成功：https://sepolia.basescan.org/tx/{txHash}
                     </a>
                   ) : null}
                 </>
