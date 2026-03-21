@@ -88,6 +88,7 @@ declare global {
 
 type PendingAction = 'omnigas' | 'transfer' | 'swap' | ''
 type ThemeMode = 'system' | 'dark' | 'light'
+type OmnigasToken = 'USDC' | 'BOX'
 
 const THEME_ICONS: Record<ThemeMode, string> = { system: '⚙️', dark: '🌙', light: '☀️' }
 const THEME_ORDER: ThemeMode[] = ['system', 'dark', 'light']
@@ -136,6 +137,15 @@ const WalletHome: NextPage = () => {
   const [msg, setMsg] = useState('')
   const [txHash, setTxHash] = useState('')
 
+  // 全能服务费面板
+  const [showOmnigas, setShowOmnigas] = useState(false)
+  const [omnigasStep, setOmnigasStep] = useState<'list' | 'detail'>('list')
+  const [omnigasToken, setOmnigasToken] = useState<OmnigasToken>('USDC')
+  const [omnigasAmount, setOmnigasAmount] = useState(10)
+  const [omnigasLoading, setOmnigasLoading] = useState(false)
+  const [omnigasMsg, setOmnigasMsg] = useState('')
+  const [omnigazTxHash, setOmnigazTxHash] = useState('')
+
   // 委托管理
   const [myPayer, setMyPayer] = useState('')           // payerOf[me]，我绑定的 payer
   const [delegateInput, setDelegateInput] = useState('') // 授权/撤销输入框
@@ -162,9 +172,10 @@ const WalletHome: NextPage = () => {
   const executeAction = useCallback((action: PendingAction) => {
     if (action === 'swap') window.location.href = '/swap'
     if (action === 'omnigas') {
-      setShowTest(true)
-      setMsg('')
-      setTxHash('')
+      setShowOmnigas(true)
+      setOmnigasStep('list')
+      setOmnigasMsg('')
+      setOmnigazTxHash('')
     }
     if (action === 'transfer') {
       setShowTest(true)
@@ -218,12 +229,12 @@ const WalletHome: NextPage = () => {
   }, [current])
 
   useEffect(() => {
-    if (!current || !isSepoliaMode || !showTest) return
+    if (!current || !isSepoliaMode || (!showTest && !showOmnigas)) return
     refreshBalances(current)
     refreshPayer(current)
     const timer = window.setInterval(() => { refreshBalances(current); refreshPayer(current) }, 5000)
     return () => window.clearInterval(timer)
-  }, [current, isSepoliaMode, showTest, refreshBalances, refreshPayer])
+  }, [current, isSepoliaMode, showTest, showOmnigas, refreshBalances, refreshPayer])
 
   const getWalletClient = useCallback(async () => {
     if (!provider) throw new Error('请先连接 MetaMask')
@@ -302,6 +313,61 @@ const WalletHome: NextPage = () => {
       setDelegating(false)
     }
   }, [current, getWalletClient])
+
+  const onOmniClaim = useCallback(async () => {
+    if (!current) { setOmnigasMsg('请先连接钱包'); return }
+    setOmnigasLoading(true); setOmnigasMsg(''); setOmnigazTxHash('')
+    try {
+      const { response, data } = await fetchWithTimeout('/api/faucet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userAddress: current }),
+      })
+      if (!response.ok) throw new Error(data?.error || 'Faucet 失败')
+      setOmnigasMsg('已领取 10 USDC 测试币')
+      setOmnigazTxHash(data.txHash)
+      await refreshBalances(current)
+    } catch (e: any) {
+      setOmnigasMsg(e.message || 'Faucet 失败')
+    } finally {
+      setOmnigasLoading(false)
+    }
+  }, [current, refreshBalances])
+
+  const onOmnigasDeposit = useCallback(async () => {
+    if (!current || !vaultAddress) { setOmnigasMsg('请先连接钱包'); return }
+    const cfg = tokenConfig[omnigasToken]
+    if (!cfg?.address) { setOmnigasMsg('代币未配置'); return }
+    const decimals = omnigasToken === 'USDC' ? 6n : 18n
+    const amountWei = BigInt(omnigasAmount) * (10n ** decimals)
+    setOmnigasLoading(true); setOmnigasMsg(''); setOmnigazTxHash('')
+    try {
+      const wc = await getWalletClient()
+      const approveHash = await wc.writeContract({
+        account: current as `0x${string}`,
+        address: cfg.address,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [vaultAddress, amountWei],
+      })
+      await publicClient.waitForTransactionReceipt({ hash: approveHash })
+      const depositHash = await wc.writeContract({
+        account: current as `0x${string}`,
+        address: vaultAddress,
+        abi: VAULT_ABI,
+        functionName: 'deposit',
+        args: [cfg.address, amountWei],
+      })
+      await publicClient.waitForTransactionReceipt({ hash: depositHash })
+      setOmnigasMsg('充值成功！')
+      setOmnigazTxHash(depositHash)
+      await refreshBalances(current)
+    } catch (e: any) {
+      setOmnigasMsg(e.shortMessage || e.message || '充值失败')
+    } finally {
+      setOmnigasLoading(false)
+    }
+  }, [current, omnigasToken, omnigasAmount, getWalletClient, refreshBalances])
 
   const onClaim = useCallback(async () => {
     if (!current) { setMsg('请先连接钱包'); return }
@@ -423,7 +489,7 @@ const WalletHome: NextPage = () => {
         <div className={styles.actions}>
           <button className={styles.actionCard} onClick={() => handleAction('omnigas')}>
             <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>⛽</div>
-            <span className={styles.actionLabel}>万能Gas</span>
+            <span className={styles.actionLabel}>全能服务费</span>
           </button>
           <button className={styles.actionCard} onClick={() => handleAction('transfer')}>
             <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #10B981, #3B82F6)' }}>↗</div>
@@ -448,7 +514,7 @@ const WalletHome: NextPage = () => {
             <div className={styles.modalEmoji}>🔐</div>
             <h2 className={styles.modalTitle}>连接钱包</h2>
             <p className={styles.modalDesc}>
-              使用{{ omnigas: '万能Gas', transfer: '转账', swap: 'Swap' }[pendingAction] || ''}功能前，请先连接你的钱包
+              使用{{ omnigas: '全能服务费', transfer: '转账', swap: 'Swap' }[pendingAction] || ''}功能前，请先连接你的钱包
             </p>
             <button className={styles.connectBtn} onClick={connectWallet}>MetaMask 连接</button>
             <button className={styles.cancelBtn} onClick={() => setShowLogin(false)}>取消</button>
@@ -478,6 +544,129 @@ const WalletHome: NextPage = () => {
               </button>
             ))}
             <button className={styles.addAccountBtn} onClick={connectWallet}>+ 添加 / 切换账户</button>
+          </div>
+        </div>
+      )}
+
+      {/* 全能服务费 — 代币列表 */}
+      {showOmnigas && omnigasStep === 'list' && (
+        <div className={styles.overlay} onClick={() => setShowOmnigas(false)}>
+          <div className={styles.omnigasSheet} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.sheetHandle} />
+            <div className={styles.omnigasHeader}>
+              <h3 className={styles.omnigasTitle}>充值代币</h3>
+              <button className={styles.testClose} onClick={() => setShowOmnigas(false)}>✕</button>
+            </div>
+            {[
+              { id: 'USDC' as OmnigasToken, label: 'USDC', chain: 'Sepolia', color: '#2775CA', vaultBal: balances.usdcBalance, badge: '测试币' },
+              { id: 'BOX' as OmnigasToken, label: 'BOX', chain: 'Sepolia', color: '#6366F1', vaultBal: balances.boxBalance, badge: '' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                className={styles.omnigasTokenRow}
+                onClick={() => { setOmnigasToken(t.id); setOmnigasStep('detail'); setOmnigasAmount(10); setOmnigasMsg(''); setOmnigazTxHash('') }}
+              >
+                <div className={styles.omnigasTokenIcon} style={{ background: t.color }}>{t.label[0]}</div>
+                <div className={styles.omnigasTokenInfo}>
+                  <div className={styles.omnigasTokenNameRow}>
+                    <span className={styles.omnigasTokenName}>{t.label}</span>
+                    {t.badge && <span className={styles.omnigasBadge}>{t.badge}</span>}
+                  </div>
+                  <span className={styles.omnigasTokenChain}>{t.chain}</span>
+                </div>
+                <div className={styles.omnigasTokenBalCol}>
+                  <span className={styles.omnigasTokenBal}>Vault: {t.vaultBal}</span>
+                  <span className={styles.omnigasTokenSub}>Testnet</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 全能服务费 — 充值详情 */}
+      {showOmnigas && omnigasStep === 'detail' && (
+        <div className={styles.overlayCenter} onClick={() => setOmnigasStep('list')}>
+          <div className={styles.omnigasSheetCenter} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.omnigasHeader}>
+              <button className={styles.omnigasBackBtn} onClick={() => setOmnigasStep('list')}>‹</button>
+              <h3 className={styles.omnigasTitle}>充值详情</h3>
+              <button className={styles.testClose} onClick={() => setShowOmnigas(false)}>✕</button>
+            </div>
+
+            {/* 充值代币 selector */}
+            <div className={styles.omnigasSection}>
+              <div className={styles.omnigasLabel}>充值代币</div>
+              <button className={styles.omnigasCoinSelector} onClick={() => setOmnigasStep('list')}>
+                <div className={styles.omnigasTokenIcon} style={{ background: omnigasToken === 'USDC' ? '#2775CA' : '#6366F1' }}>
+                  {omnigasToken[0]}
+                </div>
+                <div className={styles.omnigasTokenInfo}>
+                  <span className={styles.omnigasTokenName}>{omnigasToken}</span>
+                  <span className={styles.omnigasTokenChain}>Sepolia</span>
+                </div>
+                <span className={styles.omnigasArrow}>›</span>
+              </button>
+            </div>
+
+            {/* 数量选择 */}
+            <div className={styles.omnigasSection}>
+              <div className={styles.omnigasLabelRow}>
+                <div className={styles.omnigasLabel}>数量</div>
+                <div className={styles.omnigasVaultBal}>
+                  Vault: {omnigasToken === 'USDC' ? balances.usdcBalance : balances.boxBalance} {omnigasToken}
+                </div>
+              </div>
+              <div className={styles.omnigasAmounts}>
+                {[5, 10, 200].map((amt) => (
+                  <button
+                    key={amt}
+                    className={[styles.omnigasAmountChip, omnigasAmount === amt ? styles.omnigasAmountChipActive : ''].join(' ')}
+                    onClick={() => setOmnigasAmount(amt)}
+                  >
+                    <span className={styles.omnigasAmountMain}>{amt} {omnigasToken}</span>
+                    <span className={styles.omnigasAmountSub}>${amt}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 费用信息 */}
+            <div className={styles.omnigasInfoRows}>
+              <div className={styles.omnigasInfoRow}>
+                <span>充值金额</span>
+                <strong>{omnigasAmount} {omnigasToken}</strong>
+              </div>
+              <div className={styles.omnigasInfoRow}>
+                <span>预计 Gas 费</span>
+                <strong>&lt; 0.0001 ETH ~&lt;$0.01</strong>
+              </div>
+            </div>
+
+            {/* 提示 */}
+            <div className={styles.omnigasNotice}>
+              ℹ 充值的资产将用于支付交易服务费，不可提取
+            </div>
+
+            {/* 状态 */}
+            {omnigasMsg && <div className={styles.testMsg}>{omnigasMsg}</div>}
+            {omnigazTxHash && (
+              <a className={styles.testTxLink} href={`${EXPLORER_TX}${omnigazTxHash}`} target="_blank" rel="noreferrer">
+                查看交易 ↗
+              </a>
+            )}
+
+            {/* 领取测试币（Sepolia） */}
+            {isSepoliaMode && omnigasToken === 'USDC' && (
+              <button className={styles.omnigasFaucetBtn} onClick={onOmniClaim} disabled={omnigasLoading}>
+                {omnigasLoading ? '处理中...' : '领取测试 USDC'}
+              </button>
+            )}
+
+            {/* 充值按钮 */}
+            <button className={styles.omnigasDepositBtn} onClick={onOmnigasDeposit} disabled={omnigasLoading}>
+              {omnigasLoading ? '充值中...' : '充值'}
+            </button>
           </div>
         </div>
       )}
