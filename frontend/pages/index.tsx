@@ -122,19 +122,29 @@ const WalletHome: NextPage = () => {
     return () => window.ethereum.removeListener?.('accountsChanged', handler)
   }, [])
 
+  const executeAction = useCallback((action: PendingAction) => {
+    if (action === 'swap') window.location.href = '/swap'
+    // transfer / omnigas 在此扩展
+  }, [])
+
   const connectWallet = useCallback(async () => {
     if (!window.ethereum) { alert('请先安装 MetaMask'); return }
     try {
       const accs: string[] = await window.ethereum.request({ method: 'eth_requestAccounts' })
       setAccounts(accs); setCurrent(accs[0])
       setShowLogin(false); setShowSwitcher(false)
+      // 连接成功后继续执行之前的动作
+      if (pendingAction) {
+        setPendingAction('')
+        executeAction(pendingAction)
+      }
     } catch {}
-  }, [])
+  }, [pendingAction, executeAction])
 
   const handleAction = useCallback((action: PendingAction) => {
     if (!current) { setPendingAction(action); setShowLogin(true); return }
-    if (action === 'swap') window.location.href = '/swap'
-  }, [current])
+    executeAction(action)
+  }, [current, executeAction])
 
   // ── 测试面板逻辑 ─────────────────────────────────────
   const refreshBalances = useCallback(async (address?: string) => {
@@ -244,45 +254,47 @@ const WalletHome: NextPage = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </Head>
 
-      {/* 顶部状态栏 */}
-      <div className={styles.statusBar}>
-        {current ? (
-          <button className={styles.accountBtn} onClick={() => setShowSwitcher(true)}>
-            <div className={styles.avatar} style={{ background: getAvatarColor(current) }}>
-              {current.slice(2, 4).toUpperCase()}
-            </div>
-            <span className={styles.addrText}>{shortAddr(current)}</span>
-            <span className={styles.chevron}>▾</span>
-          </button>
-        ) : (
-          <span className={styles.notConnected}>未连接</span>
-        )}
-      </div>
-
-      {/* 余额卡片 */}
-      <div className={styles.balanceCard}>
-        <div className={styles.balanceLabel}>总资产</div>
-        <div className={styles.balanceAmount}>$0.00</div>
-        <div className={styles.networkBadge}>
-          <span className={styles.networkDot} />
-          Sepolia Testnet
+      <div className={styles.inner}>
+        {/* 顶部状态栏 */}
+        <div className={styles.statusBar}>
+          {current ? (
+            <button className={styles.accountBtn} onClick={() => setShowSwitcher(true)}>
+              <div className={styles.avatar} style={{ background: getAvatarColor(current) }}>
+                {current.slice(2, 4).toUpperCase()}
+              </div>
+              <span className={styles.addrText}>{shortAddr(current)}</span>
+              <span className={styles.chevron}>▾</span>
+            </button>
+          ) : (
+            <span className={styles.notConnected}>未连接</span>
+          )}
         </div>
-      </div>
 
-      {/* 三个功能按钮 */}
-      <div className={styles.actions}>
-        <button className={styles.actionCard} onClick={() => handleAction('omnigas')}>
-          <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>⛽</div>
-          <span className={styles.actionLabel}>万能Gas</span>
-        </button>
-        <button className={styles.actionCard} onClick={() => handleAction('transfer')}>
-          <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #10B981, #3B82F6)' }}>↗</div>
-          <span className={styles.actionLabel}>转账</span>
-        </button>
-        <button className={styles.actionCard} onClick={() => handleAction('swap')}>
-          <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #F59E0B, #EF4444)' }}>⇄</div>
-          <span className={styles.actionLabel}>Swap</span>
-        </button>
+        {/* 余额卡片 */}
+        <div className={styles.balanceCard}>
+          <div className={styles.balanceLabel}>总资产</div>
+          <div className={styles.balanceAmount}>$0.00</div>
+          <div className={styles.networkBadge}>
+            <span className={styles.networkDot} />
+            Sepolia Testnet
+          </div>
+        </div>
+
+        {/* 三个功能按钮 */}
+        <div className={styles.actions}>
+          <button className={styles.actionCard} onClick={() => handleAction('omnigas')}>
+            <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>⛽</div>
+            <span className={styles.actionLabel}>万能Gas</span>
+          </button>
+          <button className={styles.actionCard} onClick={() => handleAction('transfer')}>
+            <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #10B981, #3B82F6)' }}>↗</div>
+            <span className={styles.actionLabel}>转账</span>
+          </button>
+          <button className={styles.actionCard} onClick={() => handleAction('swap')}>
+            <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #F59E0B, #EF4444)' }}>⇄</div>
+            <span className={styles.actionLabel}>Swap</span>
+          </button>
+        </div>
       </div>
 
       {/* 右下角测试入口 */}

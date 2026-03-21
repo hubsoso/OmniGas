@@ -164,3 +164,9 @@
     max-width: 360px;
   }
 }
+
+@media (min-width: 1024px) {
+  .widgetColumn {
+    width: 400px;
+  }
+}

@@ -1,12 +1,66 @@
+/* ── 页面根容器 ── */
 .phone {
-  max-width: 390px;
   min-height: 100vh;
-  margin: 0 auto;
+  width: 100%;
   background: linear-gradient(180deg, #0D0D1A 0%, #141428 100%);
   color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
   position: relative;
   overflow-x: hidden;
+}
+
+/* ── 内容居中容器 ── */
+.inner {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .inner {
+    max-width: 640px;
+    padding: 0 24px;
+  }
+
+  .statusBar {
+    padding-top: 32px;
+  }
+
+  .balanceCard {
+    padding: 36px 32px;
+  }
+
+  .balanceAmount {
+    font-size: 56px;
+  }
+
+  .actions {
+    gap: 16px;
+    justify-content: center;
+    padding: 8px 0 32px;
+  }
+
+  .actionCard {
+    min-width: 120px;
+  }
+
+  .actionIcon {
+    width: 72px;
+    height: 72px;
+    font-size: 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .inner {
+    max-width: 800px;
+  }
+
+  .actions {
+    gap: 24px;
+  }
 }
 
 /* ── 顶部状态栏 ── */
@@ -328,6 +382,24 @@
 }
 .addAccountBtn:active {
   border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── 侧边栏内容样式 ── */
+.sidebarTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.sidebarCard {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 12px;
 }
 
 /* ── 右下角测试浮动按钮 ── */
