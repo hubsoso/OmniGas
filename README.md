@@ -47,21 +47,33 @@ Network: **Base Sepolia** (Chain ID: 84532)
 ## Project Structure
 
 ```
-contracts/          Foundry — smart contracts + tests + deploy script
-src/app/
-  page.tsx          Single-page frontend (wagmi + viem)
-  api/
-    relay/          POST /api/relay — relayer sends gaslessMint tx
-    balance/        GET  /api/balance?address= — vault balance + NFT count
-    faucet/         POST /api/faucet — mint 10 free MockUSDC
-src/lib/
-  abi.ts            Minimal ABI fragments
-  contracts.ts      Contract address constants
-  wagmi.ts          wagmi config (Base Sepolia)
+contracts/                Foundry — smart contracts + tests + deploy script
+  src/
+    MockUSDC.sol          Mintable ERC20, 6 decimals
+    MockBOX.sol           Mintable ERC20, 18 decimals
+    GasVault.sol          Multi-token prepaid balance pool
+    DemoNFT.sol           ERC721, only Executor can mint
+    DemoExecutor.sol      Relayer entry point
+  script/Deploy.s.sol
+  test/OmniGas.t.sol
+
+frontend/                 Next.js (pages router) — swap widget + gas selector
+  pages/index.tsx         Main page: Uniswap SwapWidget + OmniGas gas selector
+  styles/OmniGas.module.css
+  lib/
+    paymasterClient.ts
+    sendGaslessTransaction.ts
+
+src/app/api/              Next.js API routes — Relayer backend
+  relay/                  POST /api/relay
+  balance/                GET  /api/balance?address=
+  faucet/                 POST /api/faucet
+
 docs/
-  contracts.md      Full contract source & deploy instructions
-  relay.md          API route implementations
-  frontend.md       page.tsx source & setup steps
+  plan.md                 Unified development plan
+  contracts.md            Contract source & deploy instructions
+  relay.md                API route implementations
+  frontend.md             Frontend integration guide
 ```
 
 ---
@@ -73,7 +85,6 @@ docs/
 ```bash
 git clone https://github.com/hubsoso/OmniGas
 cd OmniGas
-npm install
 ```
 
 ### 2. Deploy contracts
@@ -85,12 +96,12 @@ cp .env.example .env   # fill PRIVATE_KEY, RELAYER_ADDRESS, RPC_URL
 forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast
 ```
 
-Copy the printed addresses into `.env.local`.
+Copy the printed addresses into `frontend/.env.local`.
 
 ### 3. Configure environment
 
 ```bash
-# .env.local
+# frontend/.env.local
 NEXT_PUBLIC_CHAIN_ID=84532
 NEXT_PUBLIC_USDC_ADDRESS=0x...
 NEXT_PUBLIC_BOX_ADDRESS=0x...
@@ -101,10 +112,12 @@ RELAYER_PRIVATE_KEY=0x...        # server-side only
 RPC_URL=https://sepolia.base.org
 ```
 
-### 4. Run
+### 4. Run frontend
 
 ```bash
-npm run dev   # http://localhost:3000
+cd frontend
+yarn install
+yarn dev   # http://localhost:3000
 ```
 
 ---
