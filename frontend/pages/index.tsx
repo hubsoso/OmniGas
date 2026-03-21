@@ -728,7 +728,20 @@ const WalletHome: NextPage = () => {
               <button className={styles.testClose} onClick={() => setShowOmnigas(false)}>✕</button>
             </div>
 
-            {/* 📌 任务#2：检测子账户提示 - 若当前 !== primaryAccount 则显示蓝色提示卡片 */}
+            {/* 子账户提示：当前账户不是主账户时显示 */}
+            {primaryAccount && current && current !== primaryAccount && (
+              <div className={styles.subAccountNotice}>
+                <span className={styles.subAccountNoticeText}>
+                  💡 当前为子账户，充值请切换到主账户
+                </span>
+                <button
+                  className={styles.subAccountSwitchBtn}
+                  onClick={() => { setCurrent(primaryAccount); setShowOmnigas(false) }}
+                >
+                  切换
+                </button>
+              </div>
+            )}
 
             {/* 充值代币 selector */}
             <div className={styles.omnigasSection}>
