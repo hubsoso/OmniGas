@@ -130,7 +130,7 @@ const WalletHome: NextPage = () => {
   const [showTest, setShowTest] = useState(false)
   const [networkMode, setNetworkMode] = useState<NetworkMode>('sepolia')
   const [gasToken, setGasToken] = useState<GasToken>('USDC')
-  const [balances, setBalances] = useState({ usdcBalance: '--', boxBalance: '--', nftCount: '--', effectivePayer: '' })
+  const [balances, setBalances] = useState({ usdcBalance: '0', boxBalance: '0', nftCount: '0', effectivePayer: '' })
   const [claiming, setClaiming] = useState(false)
   const [depositing, setDepositing] = useState(false)
   const [minting, setMinting] = useState(false)
