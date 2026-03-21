@@ -657,7 +657,17 @@ const WalletHome: NextPage = () => {
                       </div>
                     </div>
                   </button>
-                  {!isPrimary && (
+                  {isPrimary ? (
+                    <button
+                      className={styles.unsetPrimaryBtn}
+                      onClick={() => {
+                        localStorage.removeItem('omngas_primary_account')
+                        setPrimaryAccount('')
+                      }}
+                    >
+                      解除
+                    </button>
+                  ) : !primaryAccount && (
                     <button
                       className={styles.setAsPrimaryBtn}
                       onClick={() => { setPrimaryAccountTo(acc); setShowSwitcher(false) }}
