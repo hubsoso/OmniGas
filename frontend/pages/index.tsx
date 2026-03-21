@@ -208,11 +208,32 @@ const WalletHome: NextPage = () => {
   }, [])
 
   const connectWallet = useCallback(async () => {
-    if (!window.ethereum) { alert('请先安装 MetaMask'); return }
+    console.log('[connectWallet] 点击了添加账户按钮')
+    console.log('[connectWallet] window.ethereum:', window.ethereum)
+    if (!window.ethereum) {
+      console.log('[connectWallet] MetaMask 未安装')
+      alert('请先安装 MetaMask');
+      return
+    }
     try {
+      console.log('[connectWallet] 正在请求账户授权...')
       const accs: string[] = await window.ethereum.request({ method: 'eth_requestAccounts' })
+      console.log('[connectWallet] 授权成功，账户:', accs)
+
+      // 检测是否有新账户（不在已连接列表中）
+      const newAccounts = accs.filter(acc => !accounts.map(a => a.toLowerCase()).includes(acc.toLowerCase()))
+      console.log('[connectWallet] 新账户:', newAccounts, '已有账户:', accounts)
+
+      if (newAccounts.length === 0) {
+        // 没有新账户，说明用户没有在MetaMask中切换账户
+        setMsg('👉 请在 MetaMask 中切换到新账户，然后再试一次')
+        return
+      }
+
       setAccounts(accs); setCurrent(accs[0])
       setShowLogin(false); setShowSwitcher(false)
+      setMsg('✅ 账户已添加')
+
       // 连接成功后继续执行之前的动作
       if (pendingAction) {
         setPendingAction('')
@@ -227,7 +248,7 @@ const WalletHome: NextPage = () => {
         setMsg(`连接失败: ${err?.message || '未知错误'}`)
       }
     }
-  }, [pendingAction, executeAction])
+  }, [pendingAction, executeAction, accounts])
 
   const handleAction = useCallback((action: PendingAction) => {
     if (!current) { setPendingAction(action); setShowLogin(true); return }
