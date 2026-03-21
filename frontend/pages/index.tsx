@@ -218,7 +218,15 @@ const WalletHome: NextPage = () => {
         setPendingAction('')
         executeAction(pendingAction)
       }
-    } catch {}
+    } catch (err: any) {
+      console.error('[connectWallet]', err)
+      // 用户拒绝或其他错误，保持弹出框打开
+      if (err?.code === 4001) {
+        setMsg('你已拒绝连接请求')
+      } else {
+        setMsg(`连接失败: ${err?.message || '未知错误'}`)
+      }
+    }
   }, [pendingAction, executeAction])
 
   const handleAction = useCallback((action: PendingAction) => {
