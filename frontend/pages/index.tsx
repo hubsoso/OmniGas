@@ -161,6 +161,7 @@ const WalletHome: NextPage = () => {
   const [myPayer, setMyPayer] = useState('')           // payerOf[me]，我绑定的 payer
   const [delegateInput, setDelegateInput] = useState('') // 授权/撤销输入框
   const [delegating, setDelegating] = useState(false)
+  const [subAccountAuthStatus, setSubAccountAuthStatus] = useState<Record<string, boolean>>({}) // 子账户链上授权状态
 
   const isSepoliaMode = networkMode === 'sepolia'
   const selectedToken = gasToken === 'ETH' ? null : tokenConfig[gasToken]
@@ -285,6 +286,27 @@ const WalletHome: NextPage = () => {
     } catch {}
   }, [current])
 
+  // 刷新子账户链上授权状态
+  const refreshSubAccountAuthStatus = useCallback(async () => {
+    if (!primaryAccount || !vaultAddress || accounts.length <= 1) return
+    const subs = accounts.filter(acc => acc.toLowerCase() !== primaryAccount.toLowerCase())
+    const results: Record<string, boolean> = {}
+    await Promise.all(subs.map(async sub => {
+      try {
+        const payer = await publicClient.readContract({
+          address: vaultAddress,
+          abi: VAULT_DELEGATE_ABI,
+          functionName: 'payerOf',
+          args: [sub as `0x${string}`],
+        })
+        results[sub.toLowerCase()] = (payer as string).toLowerCase() === primaryAccount.toLowerCase()
+      } catch {
+        results[sub.toLowerCase()] = false
+      }
+    }))
+    setSubAccountAuthStatus(results)
+  }, [accounts, primaryAccount])
+
   // 从 cookie 缓存立即恢复余额，避免白屏等待
   useEffect(() => {
     if (!current) return
@@ -298,6 +320,12 @@ const WalletHome: NextPage = () => {
     refreshBalances(current)
     refreshPayer(current)
   }, [current, isSepoliaMode, refreshBalances, refreshPayer])
+
+  // 子账户授权状态变化时刷新
+  useEffect(() => {
+    if (!isSepoliaMode) return
+    refreshSubAccountAuthStatus()
+  }, [accounts, primaryAccount, isSepoliaMode, refreshSubAccountAuthStatus])
 
   // 面板打开时持续轮询
   useEffect(() => {
