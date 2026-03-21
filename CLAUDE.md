@@ -14,25 +14,26 @@ The system has three layers:
 
 ### Smart Contracts (Foundry, `contracts/`)
 Four contracts form the on-chain system:
-- **MockUSDC** — mintable ERC20 for testing
-- **GasVault** — holds user USDC balances; only `DemoExecutor` can call `deduct()`
+- **MockUSDC** — mintable ERC20 for testing (6 decimals)
+- **MockBOX** — mintable ERC20 for testing (18 decimals)
+- **GasVault** — multi-token prepaid balance pool; only `DemoExecutor` can call `deduct()`
 - **DemoNFT** — ERC721 where only `DemoExecutor` can call `mint()`
-- **DemoExecutor** — entry point for the relayer; calls `vault.deduct()` then `nft.mint()` atomically. Fixed fee: 0.1 USDC (100_000 in 6-decimal units)
+- **DemoExecutor** — entry point for the relayer; calls `vault.deduct()` then `nft.mint()` atomically. Fixed fee: 0.2 USDC / 0.2 BOX (2x markup on ~0.1 gas cost; actual amounts: 200_000 for USDC, 2e17 for BOX)
 
 Permission chain: `Relayer wallet → DemoExecutor (onlyRelayer) → GasVault.deduct + DemoNFT.mint`
 
-### Backend Relay (Next.js API Routes, `src/app/api/`)
+### Backend Relay (Next.js API Routes, `frontend/pages/api/`)
 Three routes, all using the relayer's private key server-side:
-- `POST /api/relay` — validates user address, simulates then sends `executor.gaslessMint(user)`, waits for receipt
-- `GET /api/balance?address=0x...` — returns vault balance (USDC) and NFT count
-- `POST /api/faucet` — mints 10 MockUSDC to user (in-memory dedup, resets on restart)
+- `POST /api/relay` — accepts `{userAddress, feeToken}`, simulates then sends `executor.gaslessMint(user, feeToken)`, returns `{txHash, blockNumber}`
+- `GET /api/balance?address=0x...` — returns `{usdcBalance, boxBalance, nftCount}` by querying vault
+- `POST /api/faucet` — accepts `{userAddress}`, mints 10 MockUSDC to user (in-memory dedup, resets on restart), returns `{txHash}`
 
-### Frontend (Next.js + wagmi/viem, `src/app/page.tsx`)
-Single-page app. User flow:
-1. Connect MetaMask
-2. Claim free USDC via faucet API
-3. Approve + deposit USDC to GasVault (two MetaMask confirmations, user pays gas here)
-4. Click "Gasless Mint" → calls `/api/relay` → relayer sends tx → success shown with tx hash
+### Frontend (Next.js + viem, `frontend/pages/index.tsx`)
+Single-page app with multi-token support. User flow:
+1. Connect MetaMask (must be on Sepolia, chain ID 11155111)
+2. Select gas token: ETH (native, requires balance) or USDC/BOX (from vault)
+3. For USDC/BOX: claim via faucet API → approve + deposit to GasVault (two MetaMask confirmations, user pays gas)
+4. Click "Gasless Mint" → calls `/api/relay` with `{userAddress, feeToken}` → relayer executes → success shown with tx hash and block explorer link
 
 ## Development Commands
 
@@ -63,20 +64,21 @@ forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify
 ## Environment Variables
 
 ```
-# .env.local (Next.js)
-NEXT_PUBLIC_CHAIN_ID=84532
-NEXT_PUBLIC_USDC_ADDRESS=0x...
-NEXT_PUBLIC_VAULT_ADDRESS=0x...
-NEXT_PUBLIC_NFT_ADDRESS=0x...
-NEXT_PUBLIC_EXECUTOR_ADDRESS=0x...
-RELAYER_PRIVATE_KEY=0x...   # server-side only, never NEXT_PUBLIC_
-RPC_URL=https://sepolia.base.org
+# frontend/.env.local (Next.js)
+NEXT_PUBLIC_CHAIN_ID=11155111
+NEXT_PUBLIC_USDC_ADDRESS=0x...          # deployed MockUSDC address
+NEXT_PUBLIC_BOX_ADDRESS=0x...           # deployed MockBOX address
+NEXT_PUBLIC_VAULT_ADDRESS=0x...         # deployed GasVault address
+NEXT_PUBLIC_NFT_ADDRESS=0x...           # deployed DemoNFT address
+NEXT_PUBLIC_EXECUTOR_ADDRESS=0x...      # deployed DemoExecutor address
+RELAYER_PRIVATE_KEY=0x...               # server-side only, never expose with NEXT_PUBLIC_
+RPC_URL=https://rpc.sepolia.org
 
 # contracts/.env (Foundry)
-PRIVATE_KEY=0x...
-RELAYER_ADDRESS=0x...
-RPC_URL=https://sepolia.base.org
-ETHERSCAN_API_KEY=...
+PRIVATE_KEY=0x...                       # deployer's private key
+RELAYER_ADDRESS=0x...                   # relayer wallet address (from RELAYER_PRIVATE_KEY)
+RPC_URL=https://rpc.sepolia.org
+ETHERSCAN_API_KEY=...                   # for contract verification (optional)
 ```
 
 ## MCP Servers

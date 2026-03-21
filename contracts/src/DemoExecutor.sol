@@ -12,8 +12,8 @@ contract DemoExecutor is Ownable {
     mapping(address => bool) public relayers;
 
     // 每个 token 的固定扣费（owner 配置）
-    // USDC (6 decimals): 100_000 = 0.1 USDC
-    // BOX  (18 decimals): 1e17   = 0.1 BOX
+    // USDC (6 decimals): 200_000 = 0.2 USDC
+    // BOX  (18 decimals): 2e17   = 0.2 BOX
     mapping(address => uint256) public fees;
 
     mapping(address => uint256) public nonces;
