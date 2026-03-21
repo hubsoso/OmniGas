@@ -57,6 +57,15 @@ const publicClient = createPublicClient({
   transport: createFallbackTransport(SEPOLIA_RPC_URLS),
 })
 
+// ── Cookie 缓存 ──────────────────────────────────────
+function setCookie(key: string, value: string, maxAge = 300) {
+  document.cookie = `${key}=${encodeURIComponent(value)}; max-age=${maxAge}; path=/`
+}
+function getCookie(key: string): string | null {
+  const m = document.cookie.match(new RegExp('(?:^|; )' + key + '=([^;]*)'))
+  return m ? decodeURIComponent(m[1]) : null
+}
+
 // ── 工具函数 ─────────────────────────────────────────
 function getAvatarColor(address: string) {
   return AVATAR_COLORS[parseInt(address.slice(2, 4), 16) % AVATAR_COLORS.length]
@@ -211,7 +220,10 @@ const WalletHome: NextPage = () => {
     try {
       const res = await fetch(`/api/balance?address=${addr}`)
       const data = await res.json()
-      if (res.ok) setBalances(data)
+      if (res.ok) {
+        setBalances(data)
+        setCookie(`ogbal_${addr.toLowerCase()}`, JSON.stringify(data))
+      }
     } catch {}
   }, [current, isSepoliaMode])
 
@@ -229,7 +241,14 @@ const WalletHome: NextPage = () => {
     } catch {}
   }, [current])
 
-  // 钱包连接后立即拉取余额（页面刷新也会触发）
+  // 从 cookie 缓存立即恢复余额，避免白屏等待
+  useEffect(() => {
+    if (!current) return
+    const cached = getCookie(`ogbal_${current.toLowerCase()}`)
+    if (cached) { try { setBalances(JSON.parse(cached)) } catch {} }
+  }, [current])
+
+  // 钱包连接后拉取最新余额（页面刷新也会触发）
   useEffect(() => {
     if (!current || !isSepoliaMode) return
     refreshBalances(current)
