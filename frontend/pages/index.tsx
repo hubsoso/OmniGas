@@ -598,6 +598,20 @@ const WalletHome: NextPage = () => {
           </div>
         </div>
 
+        {/* 主账户：未授权子账户提醒 */}
+        {isSepoliaMode && primaryAccount && current === primaryAccount && (() => {
+          const unauthorizedSubs = accounts.filter(acc =>
+            acc.toLowerCase() !== primaryAccount.toLowerCase() &&
+            !subAccountAuthStatus[acc.toLowerCase()]
+          )
+          if (!unauthorizedSubs.length) return null
+          return (
+            <div className={styles.homeAuthNotice} onClick={() => setShowSwitcher(true)}>
+              ⚠️ {unauthorizedSubs.length} 个子账户未授权，点击前往授权 →
+            </div>
+          )
+        })()}
+
         {/* 三个功能按钮 */}
         <div className={styles.actions}>
           <button className={styles.actionCard} onClick={() => handleAction('omnigas')}>
@@ -753,6 +767,32 @@ const WalletHome: NextPage = () => {
                 </button>
               </div>
             )}
+
+            {/* 主账户视图：显示未授权的子账户并提供一键授权 */}
+            {primaryAccount && current === primaryAccount && (() => {
+              const unauthorizedSubs = accounts.filter(acc =>
+                acc.toLowerCase() !== primaryAccount.toLowerCase() &&
+                !subAccountAuthStatus[acc.toLowerCase()]
+              )
+              if (!unauthorizedSubs.length) return null
+              return (
+                <div className={styles.unauthorizedNotice}>
+                  <div className={styles.unauthorizedTitle}>⚠️ 以下子账户未完成链上授权</div>
+                  {unauthorizedSubs.map(sub => (
+                    <div key={sub} className={styles.unauthorizedRow}>
+                      <span className={styles.unauthorizedAddr}>{sub.slice(0, 6)}...{sub.slice(-4)}</span>
+                      <button
+                        className={styles.authBtn}
+                        onClick={() => onAuthorizeSubAccount(sub)}
+                        disabled={!!authorizingSubAccount}
+                      >
+                        {authorizingSubAccount === sub ? '授权中...' : '授权'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
 
             {/* 充值代币 selector */}
             <div className={styles.omnigasSection}>

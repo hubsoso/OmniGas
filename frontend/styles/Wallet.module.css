@@ -987,6 +987,45 @@
   font-weight: 600;
 }
 
+.homeAuthNotice {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  font-size: 13px;
+  color: #F59E0B;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.homeAuthNotice:hover { background: rgba(245, 158, 11, 0.18); }
+
+.unauthorizedNotice {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+}
+.unauthorizedTitle {
+  font-size: 12px;
+  color: #F59E0B;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.unauthorizedRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+}
+.unauthorizedAddr {
+  font-size: 12px;
+  font-family: 'SF Mono', monospace;
+  color: var(--text-muted);
+}
+
 .subAccountNotice {
   display: flex;
   align-items: center;
