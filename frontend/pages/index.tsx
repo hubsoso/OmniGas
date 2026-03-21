@@ -2,57 +2,270 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import { FiGlobe } from 'react-icons/fi'
 import { SupportedLocale, SUPPORTED_LOCALES, SwapWidget } from '@uniswap/widgets'
+import { createPublicClient, createWalletClient, custom, http, parseAbi } from 'viem'
+import { baseSepolia } from 'viem/chains'
 
-// ↓↓↓ Don't forget to import the widgets' fonts! ↓↓↓
 import '@uniswap/widgets/fonts.css'
-// ↑↑↑
 
 import styles from '../styles/Home.module.css'
 import omniGasStyles from '../styles/OmniGas.module.css'
 import DocumentationCards from '../components/DocumentationCards'
 import Web3Connectors from '../components/Web3Connectors'
 import { useActiveProvider } from '../connectors'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { JSON_RPC_URL } from '../constants'
 
 const TOKEN_LIST = 'https://tokens.coingecko.com/uniswap/all.json'
 const UNI = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
 const GAS_TOKENS = ['ETH', 'USDC', 'BOX'] as const
+const ERC20_ABI = parseAbi(['function approve(address spender, uint256 amount) external returns (bool)'])
+const VAULT_ABI = parseAbi(['function deposit(address token, uint256 amount) external'])
+const BASESCAN_TX_URL = 'https://sepolia.basescan.org/tx/'
+const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 84532)
+const publicClient = createPublicClient({
+  chain: baseSepolia,
+  transport: http(baseSepolia.rpcUrls.default.http[0]),
+})
+
+type GasToken = (typeof GAS_TOKENS)[number]
+
+type BalanceResponse = {
+  usdcBalance: string
+  boxBalance: string
+  nftCount: string
+}
+
+const tokenConfig: Record<Exclude<GasToken, 'ETH'>, { address?: `0x${string}`; amount: bigint; label: string }> = {
+  USDC: {
+    address: process.env.NEXT_PUBLIC_USDC_ADDRESS as `0x${string}` | undefined,
+    amount: BigInt(10 * 1e6),
+    label: '10 USDC',
+  },
+  BOX: {
+    address: process.env.NEXT_PUBLIC_BOX_ADDRESS as `0x${string}` | undefined,
+    amount: BigInt(10) * BigInt(10) ** BigInt(18),
+    label: '10 BOX',
+  },
+}
+
+const vaultAddress = process.env.NEXT_PUBLIC_VAULT_ADDRESS as `0x${string}` | undefined
 
 const Home: NextPage = () => {
-  // When a user clicks "Connect your wallet" in the SwapWidget, this callback focuses the connectors.
   const connectors = useRef<HTMLDivElement>(null)
   const focusConnectors = useCallback(() => connectors.current?.focus(), [])
-
-  // The provider to pass to the SwapWidget.
-  // This is a Web3Provider (from @ethersproject) supplied by @web3-react; see ./connectors.ts.
   const provider = useActiveProvider()
 
-  // The locale to pass to the SwapWidget.
-  // This is a value from the SUPPORTED_LOCALES exported by @uniswap/widgets.
   const [locale, setLocale] = useState<SupportedLocale>('en-US')
-  const [gasToken, setGasToken] = useState('ETH')
+  const [gasToken, setGasToken] = useState<GasToken>('ETH')
   const [txHash, setTxHash] = useState('')
+  const [walletAddress, setWalletAddress] = useState<`0x${string}` | ''>('')
+  const [balances, setBalances] = useState<BalanceResponse>({
+    usdcBalance: '0.00',
+    boxBalance: '0.0000',
+    nftCount: '0',
+  })
   const [loading, setLoading] = useState(false)
+  const [depositing, setDepositing] = useState(false)
+  const [claiming, setClaiming] = useState(false)
+  const [message, setMessage] = useState('')
   const onSelectLocale = useCallback((e) => setLocale(e.target.value), [])
-  const onTestGaslessTransaction = useCallback(async () => {
-    console.log('OmniGas gasless test started with token:', gasToken)
-    setLoading(true)
-    setTxHash('')
+
+  const selectedToken = gasToken === 'ETH' ? null : tokenConfig[gasToken]
+
+  const refreshBalances = useCallback(
+    async (address?: string) => {
+      const targetAddress = address || walletAddress
+
+      if (!targetAddress) {
+        return
+      }
+
+      const response = await fetch(`/api/balance?address=${targetAddress}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load balances')
+      }
+
+      setBalances(data)
+    },
+    [walletAddress]
+  )
+
+  const getWalletClient = useCallback(async () => {
+    if (!provider) {
+      throw new Error('Please connect MetaMask first')
+    }
+
+    const network = await provider.getNetwork()
+
+    if (network.chainId !== CHAIN_ID) {
+      throw new Error(`Please switch MetaMask to Base Sepolia (${CHAIN_ID})`)
+    }
+
+    const externalProvider = (provider as any).provider
+
+    if (!externalProvider) {
+      throw new Error('Wallet provider unavailable')
+    }
+
+    return createWalletClient({
+      chain: baseSepolia,
+      transport: custom(externalProvider),
+    })
+  }, [provider])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function syncWallet() {
+      if (!provider) {
+        if (!cancelled) {
+          setWalletAddress('')
+        }
+        return
+      }
+
+      try {
+        const signerAddress = await provider.getSigner().getAddress()
+
+        if (!cancelled) {
+          setWalletAddress(signerAddress as `0x${string}`)
+        }
+      } catch {
+        if (!cancelled) {
+          setWalletAddress('')
+        }
+      }
+    }
+
+    syncWallet()
+
+    return () => {
+      cancelled = true
+    }
+  }, [provider])
+
+  useEffect(() => {
+    if (!walletAddress) {
+      return
+    }
+
+    refreshBalances(walletAddress).catch((error) => {
+      setMessage(error.message)
+    })
+
+    const timer = window.setInterval(() => {
+      refreshBalances(walletAddress).catch(() => {})
+    }, 5_000)
+
+    return () => window.clearInterval(timer)
+  }, [refreshBalances, walletAddress])
+
+  const onClaimUsdc = useCallback(async () => {
+    if (!walletAddress) {
+      setMessage('Please connect MetaMask first')
+      return
+    }
+
+    setClaiming(true)
+    setMessage('')
 
     try {
-      // TODO: 前端同事在此接入 /api/relay，传入 userAddress 和 feeToken 地址
-      // const res = await fetch('/api/relay', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ userAddress, feeToken: TOKEN_ADDRESS[gasToken] }) })
-      // const data = await res.json()
-      // setTxHash(data.txHash)
-      throw new Error('待接入：请调用 /api/relay')
-    } catch (error) {
-      console.error('OmniGas gasless transaction failed:', error)
+      const response = await fetch('/api/faucet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userAddress: walletAddress }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to claim faucet')
+      }
+
+      setMessage(`USDC faucet sent: ${data.txHash}`)
+      refreshBalances(walletAddress).catch(() => {})
+    } catch (error: any) {
+      setMessage(error.message || 'Failed to claim faucet')
+    } finally {
+      setClaiming(false)
+    }
+  }, [refreshBalances, walletAddress])
+
+  const onDeposit = useCallback(async () => {
+    if (!walletAddress || !selectedToken?.address || !vaultAddress) {
+      setMessage('Missing wallet or vault configuration')
+      return
+    }
+
+    setDepositing(true)
+    setMessage('')
+
+    try {
+      const walletClient = await getWalletClient()
+
+      const approveHash = await walletClient.writeContract({
+        account: walletAddress,
+        address: selectedToken.address,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [vaultAddress, selectedToken.amount],
+      })
+
+      await publicClient.waitForTransactionReceipt({ hash: approveHash })
+
+      const depositHash = await walletClient.writeContract({
+        account: walletAddress,
+        address: vaultAddress,
+        abi: VAULT_ABI,
+        functionName: 'deposit',
+        args: [selectedToken.address, selectedToken.amount],
+      })
+
+      await publicClient.waitForTransactionReceipt({ hash: depositHash })
+      setMessage(`Deposit success: ${depositHash}`)
+      await refreshBalances(walletAddress)
+    } catch (error: any) {
+      setMessage(error.shortMessage || error.message || 'Deposit failed')
+    } finally {
+      setDepositing(false)
+    }
+  }, [getWalletClient, refreshBalances, selectedToken, walletAddress])
+
+  const onGaslessMint = useCallback(async () => {
+    if (!walletAddress || !selectedToken?.address) {
+      setMessage('Please connect wallet and choose USDC or BOX')
+      return
+    }
+
+    setLoading(true)
+    setTxHash('')
+    setMessage('')
+
+    try {
+      const response = await fetch('/api/relay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userAddress: walletAddress,
+          feeToken: selectedToken.address,
+        }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Relay failed')
+      }
+
+      setTxHash(data.txHash)
+      setMessage(`Gasless mint sent: ${data.txHash}`)
+      await refreshBalances(walletAddress)
+    } catch (error: any) {
+      setMessage(error.message || 'Gasless mint failed')
     } finally {
       setLoading(false)
     }
-  }, [gasToken])
+  }, [refreshBalances, selectedToken, walletAddress])
 
   return (
     <div className={styles.container}>
@@ -104,18 +317,49 @@ const Home: NextPage = () => {
               {gasToken !== 'ETH' ? (
                 <>
                   <p className={omniGasStyles.helperText}>您无需持有 ETH，Gas 费将由 OmniGas 预付池代扣</p>
+                  <div className={omniGasStyles.balancePanel}>
+                    <div className={omniGasStyles.balanceRow}>
+                      <span>Vault USDC</span>
+                      <strong>{balances.usdcBalance}</strong>
+                    </div>
+                    <div className={omniGasStyles.balanceRow}>
+                      <span>Vault BOX</span>
+                      <strong>{balances.boxBalance}</strong>
+                    </div>
+                    <div className={omniGasStyles.balanceRow}>
+                      <span>NFT Count</span>
+                      <strong>{balances.nftCount}</strong>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={omniGasStyles.secondaryButton}
+                    onClick={onClaimUsdc}
+                    disabled={claiming || !walletAddress}
+                  >
+                    {claiming ? '领取中...' : '领取测试 USDC'}
+                  </button>
+                  <button
+                    type="button"
+                    className={omniGasStyles.secondaryButton}
+                    onClick={onDeposit}
+                    disabled={depositing || !walletAddress || !selectedToken}
+                  >
+                    {depositing ? '充值中...' : `充值 ${selectedToken?.label || ''}`}
+                  </button>
                   <button
                     type="button"
                     className={omniGasStyles.actionButton}
-                    onClick={onTestGaslessTransaction}
-                    disabled={loading}
+                    onClick={onGaslessMint}
+                    disabled={loading || !walletAddress || !selectedToken}
                   >
-                    {loading ? 'Gasless 测试中...' : '测试 Gasless 交易'}
+                    {loading ? 'Gasless Mint 中...' : 'Gasless Mint'}
                   </button>
+                  {message ? <p className={omniGasStyles.statusText}>{message}</p> : null}
                   {txHash ? (
                     <a
                       className={omniGasStyles.successLink}
-                      href={`https://sepolia.basescan.org/tx/${txHash}`}
+                      href={`${BASESCAN_TX_URL}${txHash}`}
                       target="_blank"
                       rel="noreferrer"
                     >

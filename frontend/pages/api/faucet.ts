@@ -4,55 +4,62 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { baseSepolia } from 'viem/chains'
 
 const USDC_ABI = parseAbi(['function mint(address to, uint256 amount) external'])
-const BOX_ABI = parseAbi(['function mint(address to, uint256 amount) external'])
+const claimed = new Set<string>()
 
-const account = privateKeyToAccount(process.env.RELAYER_PRIVATE_KEY as `0x${string}`)
+const rpcUrl = process.env.RPC_URL
+const relayerKey = process.env.RELAYER_PRIVATE_KEY as `0x${string}` | undefined
 
-const walletClient = createWalletClient({
-  account,
-  chain: baseSepolia,
-  transport: http(process.env.RPC_URL),
-})
-
-// 简单防刷：记录已领取地址（服务重启清空，demo 够用）
-const claimedUsdc = new Set<string>()
-const claimedBox = new Set<string>()
+const walletClient = relayerKey
+  ? createWalletClient({
+      account: privateKeyToAccount(relayerKey),
+      chain: baseSepolia,
+      transport: http(rpcUrl),
+    })
+  : null
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end()
+  if (req.method !== 'POST') {
+    return res.status(405).end()
+  }
 
-  const { userAddress, token = 'usdc' } = req.body
+  const { userAddress } = req.body ?? {}
+
   if (!userAddress || !/^0x[0-9a-fA-F]{40}$/.test(userAddress)) {
     return res.status(400).json({ error: 'Invalid address' })
   }
 
-  const key = userAddress.toLowerCase()
+  if (!rpcUrl || !relayerKey || !walletClient) {
+    return res.status(500).json({ error: 'Missing faucet env config' })
+  }
 
-  if (token === 'usdc') {
-    if (claimedUsdc.has(key)) return res.status(400).json({ error: 'USDC already claimed' })
+  if (claimed.has(userAddress.toLowerCase())) {
+    return res.status(400).json({ error: 'Already claimed' })
+  }
 
-    const hash = await walletClient.writeContract({
-      address: process.env.NEXT_PUBLIC_USDC_ADDRESS as `0x${string}`,
+  try {
+    const usdcAddress = process.env.NEXT_PUBLIC_USDC_ADDRESS as `0x${string}` | undefined
+
+    if (!usdcAddress) {
+      return res.status(500).json({ error: 'Missing USDC address' })
+    }
+
+    const txHash = await walletClient.writeContract({
+      address: usdcAddress,
       abi: USDC_ABI,
       functionName: 'mint',
-      args: [userAddress as `0x${string}`, BigInt(10 * 1e6)], // 10 USDC
+      args: [userAddress as `0x${string}`, BigInt(10 * 1e6)],
+      account: walletClient.account,
     })
-    claimedUsdc.add(key)
-    return res.json({ success: true, txHash: hash, amount: '10 USDC' })
-  }
 
-  if (token === 'box') {
-    if (claimedBox.has(key)) return res.status(400).json({ error: 'BOX already claimed' })
+    claimed.add(userAddress.toLowerCase())
 
-    const hash = await walletClient.writeContract({
-      address: process.env.NEXT_PUBLIC_BOX_ADDRESS as `0x${string}`,
-      abi: BOX_ABI,
-      functionName: 'mint',
-      args: [userAddress as `0x${string}`, BigInt(10) * BigInt(1e18)], // 10 BOX
+    return res.json({
+      success: true,
+      txHash,
     })
-    claimedBox.add(key)
-    return res.json({ success: true, txHash: hash, amount: '10 BOX' })
+  } catch (error: any) {
+    return res.status(500).json({
+      error: error?.shortMessage || error?.message || 'Unknown error',
+    })
   }
-
-  return res.status(400).json({ error: 'token must be usdc or box' })
 }

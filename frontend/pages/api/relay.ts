@@ -1,65 +1,82 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { createWalletClient, createPublicClient, http, parseAbi } from 'viem'
+import { createPublicClient, createWalletClient, http, parseAbi } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { baseSepolia } from 'viem/chains'
 
-const EXECUTOR_ABI = parseAbi([
-  'function gaslessMint(address user, address feeToken) external',
-])
+const EXECUTOR_ABI = parseAbi(['function gaslessMint(address user, address feeToken) external'])
 
-const account = privateKeyToAccount(process.env.RELAYER_PRIVATE_KEY as `0x${string}`)
+const rpcUrl = process.env.RPC_URL
+const relayerKey = process.env.RELAYER_PRIVATE_KEY as `0x${string}` | undefined
 
 const publicClient = createPublicClient({
   chain: baseSepolia,
-  transport: http(process.env.RPC_URL),
+  transport: http(rpcUrl),
 })
 
-const walletClient = createWalletClient({
-  account,
-  chain: baseSepolia,
-  transport: http(process.env.RPC_URL),
-})
+const walletClient = relayerKey
+  ? createWalletClient({
+      account: privateKeyToAccount(relayerKey),
+      chain: baseSepolia,
+      transport: http(rpcUrl),
+    })
+  : null
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end()
+  if (req.method !== 'POST') {
+    return res.status(405).end()
+  }
 
-  const { userAddress, feeToken } = req.body
+  const { userAddress, feeToken } = req.body ?? {}
 
   if (!userAddress || !/^0x[0-9a-fA-F]{40}$/.test(userAddress)) {
     return res.status(400).json({ error: 'Invalid user address' })
   }
+
   if (!feeToken || !/^0x[0-9a-fA-F]{40}$/.test(feeToken)) {
     return res.status(400).json({ error: 'Invalid feeToken address' })
   }
 
-  try {
-    const executorAddress = process.env.NEXT_PUBLIC_EXECUTOR_ADDRESS as `0x${string}`
+  if (!rpcUrl || !relayerKey || !walletClient) {
+    return res.status(500).json({ error: 'Missing relay env config' })
+  }
 
-    // 模拟执行，提前捕获 revert（余额不足 / 权限问题）
+  try {
+    const executorAddress = process.env.NEXT_PUBLIC_EXECUTOR_ADDRESS as `0x${string}` | undefined
+
+    if (!executorAddress) {
+      return res.status(500).json({ error: 'Missing executor address' })
+    }
+
     await publicClient.simulateContract({
       address: executorAddress,
       abi: EXECUTOR_ABI,
       functionName: 'gaslessMint',
       args: [userAddress as `0x${string}`, feeToken as `0x${string}`],
-      account,
+      account: walletClient.account,
     })
 
-    const hash = await walletClient.writeContract({
+    const txHash = await walletClient.writeContract({
       address: executorAddress,
       abi: EXECUTOR_ABI,
       functionName: 'gaslessMint',
       args: [userAddress as `0x${string}`, feeToken as `0x${string}`],
+      account: walletClient.account,
     })
 
-    const receipt = await publicClient.waitForTransactionReceipt({ hash, timeout: 60_000 })
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: txHash,
+      timeout: 60_000,
+    })
 
     return res.json({
       success: true,
-      txHash: hash,
+      txHash,
       blockNumber: receipt.blockNumber.toString(),
     })
-  } catch (err: any) {
-    console.error('[relay] error:', err)
-    return res.status(500).json({ error: err?.shortMessage || err?.message || 'Unknown error' })
+  } catch (error: any) {
+    console.error('[relay] error:', error)
+    return res.status(500).json({
+      error: error?.shortMessage || error?.message || 'Unknown error',
+    })
   }
 }
