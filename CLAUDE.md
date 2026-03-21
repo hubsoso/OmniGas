@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 OmniGas is a gasless transaction demo built for a hackathon. The core concept: users deposit USDC into a prepaid Gas Pool, then execute on-chain actions without holding any native gas token. A backend Relayer pays gas and deducts from their pool balance.
 
-**Target network:** Base Sepolia (Chain ID: 84532)
+**Target network:** Sepolia (Chain ID: 11155111)
 
 ## Architecture
 

@@ -40,7 +40,7 @@ User (no ETH)
 
 Permission chain: `Relayer → DemoExecutor (onlyRelayer) → GasVault.deduct + DemoNFT.mint`
 
-Network: **Base Sepolia** (Chain ID: 84532)
+Network: **Sepolia** (Chain ID: 11155111)
 
 ---
 

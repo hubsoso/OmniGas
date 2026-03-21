@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { createWalletClient, http, parseAbi } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { baseSepolia } from 'viem/chains'
+import { sepolia } from 'viem/chains'
 
 const USDC_ABI = parseAbi(['function mint(address to, uint256 amount) external'])
 const claimed = new Set<string>()
@@ -12,7 +12,7 @@ const relayerKey = process.env.RELAYER_PRIVATE_KEY as `0x${string}` | undefined
 const walletClient = relayerKey
   ? createWalletClient({
       account: privateKeyToAccount(relayerKey),
-      chain: baseSepolia,
+      chain: sepolia,
       transport: http(rpcUrl),
     })
   : null

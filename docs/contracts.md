@@ -313,8 +313,8 @@ forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast --verify
 
 ```json
 {
-  "network": "base-sepolia",
-  "chainId": 84532,
+  "network": "sepolia",
+  "chainId": 11155111,
   "MockUSDC": "0x...",
   "GasVault": "0x...",
   "DemoNFT": "0x...",
@@ -354,11 +354,7 @@ function test_gaslessMint() public {
 
 ## 推荐测试网
 
-**Base Sepolia**（首选）
-- Chain ID: 84532
-- RPC: `https://sepolia.base.org`
-- Faucet: https://www.alchemy.com/faucets/base-sepolia
-
-**Sepolia**（备选）
+**Sepolia**（首选）
 - Chain ID: 11155111
 - RPC: `https://rpc.sepolia.org`
+- Faucet: https://www.alchemy.com/faucets/sepolia

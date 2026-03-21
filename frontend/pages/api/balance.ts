@@ -1,12 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { createPublicClient, http, parseAbi } from 'viem'
-import { baseSepolia } from 'viem/chains'
+import { sepolia } from 'viem/chains'
 
 const VAULT_ABI = parseAbi(['function balanceOf(address token, address user) view returns (uint256)'])
 const NFT_ABI = parseAbi(['function balanceOf(address owner) view returns (uint256)'])
 
 const publicClient = createPublicClient({
-  chain: baseSepolia,
+  chain: sepolia,
   transport: http(process.env.RPC_URL),
 })
 

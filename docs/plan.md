@@ -8,7 +8,7 @@ OmniGas 是一个 Web3 Gas 预付池产品，核心功能是让用户用 USDC / 
 用户预先将 USDC 或 BOX 充值到 Gas Pool，平台 Relayer 替用户垫付 gas，再从
 用户的预付余额中扣除服务费（含 2× markup 利润）。
 
-**目标网络**：Base Sepolia（Chain ID: 84532）
+**目标网络**：Sepolia（Chain ID: 11155111）
 
 ---
 
@@ -187,19 +187,19 @@ OmniGas/
 
 ```bash
 # frontend/.env.local
-NEXT_PUBLIC_CHAIN_ID=84532
+NEXT_PUBLIC_CHAIN_ID=11155111
 NEXT_PUBLIC_USDC_ADDRESS=0x...
 NEXT_PUBLIC_BOX_ADDRESS=0x...
 NEXT_PUBLIC_VAULT_ADDRESS=0x...
 NEXT_PUBLIC_NFT_ADDRESS=0x...
 NEXT_PUBLIC_EXECUTOR_ADDRESS=0x...
 RELAYER_PRIVATE_KEY=0x...        # 仅服务端，绝不 NEXT_PUBLIC_
-RPC_URL=https://sepolia.base.org
+RPC_URL=https://rpc.sepolia.org
 
 # contracts/.env
 PRIVATE_KEY=0x...
 RELAYER_ADDRESS=0x...
-RPC_URL=https://sepolia.base.org
+RPC_URL=https://rpc.sepolia.org
 ```
 
 ---

@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { createPublicClient, createWalletClient, http, parseAbi } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { baseSepolia } from 'viem/chains'
+import { sepolia } from 'viem/chains'
 
 const EXECUTOR_ABI = parseAbi(['function gaslessMint(address user, address feeToken) external'])
 
@@ -9,14 +9,14 @@ const rpcUrl = process.env.RPC_URL
 const relayerKey = process.env.RELAYER_PRIVATE_KEY as `0x${string}` | undefined
 
 const publicClient = createPublicClient({
-  chain: baseSepolia,
+  chain: sepolia,
   transport: http(rpcUrl),
 })
 
 const walletClient = relayerKey
   ? createWalletClient({
       account: privateKeyToAccount(relayerKey),
-      chain: baseSepolia,
+      chain: sepolia,
       transport: http(rpcUrl),
     })
   : null

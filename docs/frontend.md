@@ -37,14 +37,14 @@ src/
 ```typescript
 // src/lib/wagmi.ts
 import { http, createConfig } from "wagmi";
-import { baseSepolia } from "wagmi/chains";
+import { sepolia } from "wagmi/chains";
 import { injected, metaMask } from "wagmi/connectors";
 
 export const config = createConfig({
-  chains: [baseSepolia],
+  chains: [sepolia],
   connectors: [injected(), metaMask()],
   transports: {
-    [baseSepolia.id]: http("https://sepolia.base.org"),
+    [sepolia.id]: http("https://rpc.sepolia.org"),
   },
 });
 ```
@@ -478,15 +478,15 @@ npm run dev
 
 ---
 
-## MetaMask 配置 Base Sepolia
+## MetaMask 配置 Sepolia
 
 | 字段 | 值 |
 |------|----|
-| 网络名称 | Base Sepolia |
-| RPC URL | https://sepolia.base.org |
-| Chain ID | 84532 |
+| 网络名称 | Sepolia |
+| RPC URL | https://rpc.sepolia.org |
+| Chain ID | 11155111 |
 | 货币符号 | ETH |
-| 区块浏览器 | https://sepolia.basescan.org |
+| 区块浏览器 | https://sepolia.etherscan.io |
 
 ---
 

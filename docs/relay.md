@@ -27,7 +27,7 @@ src/
 
 ```
 # 合约地址（部署完从 deployments.json 填入）
-NEXT_PUBLIC_CHAIN_ID=84532
+NEXT_PUBLIC_CHAIN_ID=11155111
 NEXT_PUBLIC_USDC_ADDRESS=0x...
 NEXT_PUBLIC_VAULT_ADDRESS=0x...
 NEXT_PUBLIC_NFT_ADDRESS=0x...
@@ -37,7 +37,7 @@ NEXT_PUBLIC_EXECUTOR_ADDRESS=0x...
 RELAYER_PRIVATE_KEY=0x...
 
 # RPC
-RPC_URL=https://sepolia.base.org
+RPC_URL=https://rpc.sepolia.org
 ```
 
 ---
@@ -138,7 +138,7 @@ export const NFT_ABI = [
 import { NextRequest, NextResponse } from "next/server";
 import { createWalletClient, createPublicClient, http, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { baseSepolia } from "viem/chains";
+import { sepolia } from "viem/chains";
 
 const EXECUTOR_ABI = parseAbi([
   "function gaslessMint(address user) external",
@@ -149,13 +149,13 @@ const account = privateKeyToAccount(
 );
 
 const publicClient = createPublicClient({
-  chain: baseSepolia,
+  chain: sepolia,
   transport: http(process.env.RPC_URL),
 });
 
 const walletClient = createWalletClient({
   account,
-  chain: baseSepolia,
+  chain: sepolia,
   transport: http(process.env.RPC_URL),
 });
 
@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
 // src/app/api/balance/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, parseAbi } from "viem";
-import { baseSepolia } from "viem/chains";
+import { sepolia } from "viem/chains";
 
 const VAULT_ABI = parseAbi([
   "function balances(address user) view returns (uint256)",
@@ -225,7 +225,7 @@ const NFT_ABI = parseAbi([
 ]);
 
 const publicClient = createPublicClient({
-  chain: baseSepolia,
+  chain: sepolia,
   transport: http(process.env.RPC_URL),
 });
 
@@ -269,7 +269,7 @@ export async function GET(req: NextRequest) {
 import { NextRequest, NextResponse } from "next/server";
 import { createWalletClient, createPublicClient, http, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { baseSepolia } from "viem/chains";
+import { sepolia } from "viem/chains";
 
 const USDC_ABI = parseAbi([
   "function mint(address to, uint256 amount) external",
@@ -281,7 +281,7 @@ const account = privateKeyToAccount(
 
 const walletClient = createWalletClient({
   account,
-  chain: baseSepolia,
+  chain: sepolia,
   transport: http(process.env.RPC_URL),
 });
 

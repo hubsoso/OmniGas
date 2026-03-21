@@ -3,7 +3,7 @@ import Head from 'next/head'
 import { FiGlobe } from 'react-icons/fi'
 import { SupportedLocale, SUPPORTED_LOCALES, SwapWidget } from '@uniswap/widgets'
 import { createPublicClient, createWalletClient, custom, http, parseAbi } from 'viem'
-import { baseSepolia } from 'viem/chains'
+import { sepolia } from 'viem/chains'
 
 import '@uniswap/widgets/fonts.css'
 
@@ -20,11 +20,11 @@ const UNI = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
 const GAS_TOKENS = ['ETH', 'USDC', 'BOX'] as const
 const ERC20_ABI = parseAbi(['function approve(address spender, uint256 amount) external returns (bool)'])
 const VAULT_ABI = parseAbi(['function deposit(address token, uint256 amount) external'])
-const BASESCAN_TX_URL = 'https://sepolia.basescan.org/tx/'
-const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 84532)
+const BASESCAN_TX_URL = 'https://sepolia.etherscan.io/tx/'
+const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 11155111)
 const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(baseSepolia.rpcUrls.default.http[0]),
+  chain: sepolia,
+  transport: http('https://rpc.sepolia.org'),
 })
 
 type GasToken = (typeof GAS_TOKENS)[number]
@@ -110,7 +110,7 @@ const Home: NextPage = () => {
     }
 
     return createWalletClient({
-      chain: baseSepolia,
+      chain: sepolia,
       transport: custom(externalProvider),
     })
   }, [provider])
@@ -363,7 +363,7 @@ const Home: NextPage = () => {
                       target="_blank"
                       rel="noreferrer"
                     >
-                      交易成功：https://sepolia.basescan.org/tx/{txHash}
+                      交易成功：{BASESCAN_TX_URL}{txHash}
                     </a>
                   ) : null}
                 </>
