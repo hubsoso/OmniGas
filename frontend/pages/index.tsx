@@ -1,9 +1,10 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
+import { useWeb3React } from '@web3-react/core'
 import { createPublicClient, createWalletClient, custom, parseAbi, parseUnits } from 'viem'
 import { sepolia, mainnet } from 'viem/chains'
 import { useCallback, useEffect, useState } from 'react'
-import { useActiveProvider } from '../connectors'
+import { connectors } from '../connectors'
 import { createFallbackTransport, SEPOLIA_RPC_URLS } from '../lib/rpc'
 import styles from '../styles/Wallet.module.css'
 
@@ -104,7 +105,7 @@ const THEME_ORDER: ThemeMode[] = ['system', 'dark', 'light']
 
 // ── 组件 ─────────────────────────────────────────────
 const WalletHome: NextPage = () => {
-  const provider = useActiveProvider()
+  const { account, accounts: activeAccounts } = useWeb3React()
 
   // 主题
   const [themeMode, setThemeMode] = useState<ThemeMode>('system')
@@ -166,18 +167,13 @@ const WalletHome: NextPage = () => {
 
   // ── 账户初始化 ───────────────────────────────────────
   useEffect(() => {
-    if (!window.ethereum) return
-    window.ethereum.request({ method: 'eth_accounts' }).then((accs: string[]) => {
-      if (accs.length > 0) { setAccounts(accs); setCurrent(accs[0]) }
-    }).catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    if (!window.ethereum) return
-    const handler = (accs: string[]) => { setAccounts(accs); setCurrent(accs[0] || '') }
-    window.ethereum.on('accountsChanged', handler)
-    return () => window.ethereum.removeListener?.('accountsChanged', handler)
-  }, [])
+    const nextAccounts = activeAccounts ?? (account ? [account] : [])
+    setAccounts(nextAccounts)
+    setCurrent((prev) => {
+      if (prev && nextAccounts.includes(prev)) return prev
+      return account || nextAccounts[0] || ''
+    })
+  }, [account, activeAccounts])
 
   const executeAction = useCallback((action: PendingAction) => {
     if (action === 'swap') window.location.href = '/swap'
@@ -197,8 +193,8 @@ const WalletHome: NextPage = () => {
   const connectWallet = useCallback(async () => {
     if (!window.ethereum) { alert('请先安装 MetaMask'); return }
     try {
-      const accs: string[] = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      setAccounts(accs); setCurrent(accs[0])
+      const [connector] = connectors[0]
+      await connector.activate()
       setShowLogin(false); setShowSwitcher(false)
       // 连接成功后继续执行之前的动作
       if (pendingAction) {
