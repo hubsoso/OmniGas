@@ -817,9 +817,18 @@ const WalletHome: NextPage = () => {
             )}
 
             {/* 充值按钮 */}
-            <button className={styles.omnigasDepositBtn} onClick={onOmnigasDeposit} disabled={omnigasLoading}>
-              {omnigasLoading ? '充值中...' : '充值'}
-            </button>
+            {primaryAccount && current !== primaryAccount ? (
+              <button
+                className={styles.omnigasDepositBtn}
+                onClick={() => { setCurrent(primaryAccount); setShowOmnigas(false) }}
+              >
+                切换到主账户充值 →
+              </button>
+            ) : (
+              <button className={styles.omnigasDepositBtn} onClick={onOmnigasDeposit} disabled={omnigasLoading}>
+                {omnigasLoading ? '充值中...' : '充值'}
+              </button>
+            )}
           </div>
         </div>
       )}
