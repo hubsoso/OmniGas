@@ -15,7 +15,7 @@ import { useActiveProvider } from '../connectors'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { JSON_RPC_URL } from '../constants'
 
-const TOKEN_LIST = 'https://tokens.coingecko.com/uniswap/all.json'
+const TOKEN_LIST = 'https://tokens.uniswap.org'
 const UNI = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
 const GAS_TOKENS = ['ETH', 'USDC', 'BOX'] as const
 const ERC20_ABI = parseAbi(['function approve(address spender, uint256 amount) external returns (bool)'])
@@ -40,12 +40,12 @@ type BalanceResponse = {
 const tokenConfig: Record<Exclude<GasToken, 'ETH'>, { address?: `0x${string}`; amount: bigint; label: string }> = {
   USDC: {
     address: process.env.NEXT_PUBLIC_USDC_ADDRESS as `0x${string}` | undefined,
-    amount: BigInt(10 * 1e6),
+    amount: 10000000n,
     label: '10 USDC',
   },
   BOX: {
     address: process.env.NEXT_PUBLIC_BOX_ADDRESS as `0x${string}` | undefined,
-    amount: BigInt(10) * BigInt(10) ** BigInt(18),
+    amount: 10000000000000000000n,
     label: '10 BOX',
   },
 }
