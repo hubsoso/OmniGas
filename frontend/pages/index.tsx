@@ -20,11 +20,13 @@ const UNI = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
 const GAS_TOKENS = ['ETH', 'USDC', 'BOX'] as const
 const ERC20_ABI = parseAbi(['function approve(address spender, uint256 amount) external returns (bool)'])
 const VAULT_ABI = parseAbi(['function deposit(address token, uint256 amount) external'])
-const BASESCAN_TX_URL = 'https://sepolia.etherscan.io/tx/'
 const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 11155111)
+const APP_CHAIN = sepolia
+const EXPLORER_TX_URL = 'https://sepolia.etherscan.io/tx/'
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || process.env.RPC_URL || APP_CHAIN.rpcUrls.default.http[0]
 const publicClient = createPublicClient({
-  chain: sepolia,
-  transport: http('https://rpc.sepolia.org'),
+  chain: APP_CHAIN,
+  transport: http(RPC_URL),
 })
 
 type GasToken = (typeof GAS_TOKENS)[number]
@@ -49,6 +51,13 @@ const tokenConfig: Record<Exclude<GasToken, 'ETH'>, { address?: `0x${string}`; a
 }
 
 const vaultAddress = process.env.NEXT_PUBLIC_VAULT_ADDRESS as `0x${string}` | undefined
+const hasRelayConfig = Boolean(
+  process.env.NEXT_PUBLIC_USDC_ADDRESS &&
+    process.env.NEXT_PUBLIC_BOX_ADDRESS &&
+    process.env.NEXT_PUBLIC_VAULT_ADDRESS &&
+    process.env.NEXT_PUBLIC_NFT_ADDRESS &&
+    process.env.NEXT_PUBLIC_EXECUTOR_ADDRESS
+)
 
 const Home: NextPage = () => {
   const connectors = useRef<HTMLDivElement>(null)
@@ -100,7 +109,7 @@ const Home: NextPage = () => {
     const network = await provider.getNetwork()
 
     if (network.chainId !== CHAIN_ID) {
-      throw new Error(`Please switch MetaMask to Base Sepolia (${CHAIN_ID})`)
+      throw new Error(`Please switch MetaMask to ${APP_CHAIN.name} (${CHAIN_ID})`)
     }
 
     const externalProvider = (provider as any).provider
@@ -110,7 +119,7 @@ const Home: NextPage = () => {
     }
 
     return createWalletClient({
-      chain: sepolia,
+      chain: APP_CHAIN,
       transport: custom(externalProvider),
     })
   }, [provider])
@@ -165,6 +174,11 @@ const Home: NextPage = () => {
   const onClaimUsdc = useCallback(async () => {
     if (!walletAddress) {
       setMessage('Please connect MetaMask first')
+      return
+    }
+
+    if (!hasRelayConfig) {
+      setMessage('Missing Relay contract addresses in frontend/.env.local')
       return
     }
 
@@ -235,6 +249,11 @@ const Home: NextPage = () => {
   const onGaslessMint = useCallback(async () => {
     if (!walletAddress || !selectedToken?.address) {
       setMessage('Please connect wallet and choose USDC or BOX')
+      return
+    }
+
+    if (!hasRelayConfig) {
+      setMessage('Missing Relay contract addresses in frontend/.env.local')
       return
     }
 
@@ -335,7 +354,7 @@ const Home: NextPage = () => {
                     type="button"
                     className={omniGasStyles.secondaryButton}
                     onClick={onClaimUsdc}
-                    disabled={claiming || !walletAddress}
+                    disabled={claiming || !walletAddress || !hasRelayConfig}
                   >
                     {claiming ? '领取中...' : '领取测试 USDC'}
                   </button>
@@ -343,7 +362,7 @@ const Home: NextPage = () => {
                     type="button"
                     className={omniGasStyles.secondaryButton}
                     onClick={onDeposit}
-                    disabled={depositing || !walletAddress || !selectedToken}
+                    disabled={depositing || !walletAddress || !selectedToken?.address || !vaultAddress}
                   >
                     {depositing ? '充值中...' : `充值 ${selectedToken?.label || ''}`}
                   </button>
@@ -351,7 +370,7 @@ const Home: NextPage = () => {
                     type="button"
                     className={omniGasStyles.actionButton}
                     onClick={onGaslessMint}
-                    disabled={loading || !walletAddress || !selectedToken}
+                    disabled={loading || !walletAddress || !selectedToken?.address || !hasRelayConfig}
                   >
                     {loading ? 'Gasless Mint 中...' : 'Gasless Mint'}
                   </button>
@@ -359,11 +378,11 @@ const Home: NextPage = () => {
                   {txHash ? (
                     <a
                       className={omniGasStyles.successLink}
-                      href={`${BASESCAN_TX_URL}${txHash}`}
+                      href={`${EXPLORER_TX_URL}${txHash}`}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      交易成功：{BASESCAN_TX_URL}{txHash}
+                      交易成功：{EXPLORER_TX_URL}{txHash}
                     </a>
                   ) : null}
                 </>

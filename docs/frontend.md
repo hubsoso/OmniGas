@@ -416,7 +416,7 @@ export default function Home() {
             <p className="text-sm text-gray-300">
               <span className="text-gray-500">Tx Hash:</span>{" "}
               <a
-                href={`https://sepolia.basescan.org/tx/${txHash}`}
+                href={`https://sepolia.etherscan.io/tx/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-400 hover:underline font-mono text-xs break-all"
@@ -447,7 +447,7 @@ export default function Home() {
 
         {/* 底部说明 */}
         <p className="text-center text-xs text-gray-600">
-          OmniGas Demo · Base Sepolia Testnet
+          OmniGas Demo · Sepolia Testnet
         </p>
       </div>
     </main>
@@ -468,7 +468,7 @@ npm run dev
 
 ## 演示操作流程（现场用）
 
-1. 打开页面，连接 MetaMask（切换到 Base Sepolia 网络）
+1. 打开页面，连接 MetaMask（切换到 Sepolia 网络）
 2. 点击 **Get 10 Free USDC**（后端给你 mint 测试 USDC）
 3. 点击 **Deposit 10 USDC**（MetaMask 弹出两次确认：approve + deposit）
 4. 看到 **Prepaid Gas Balance: 10.00 USDC**
@@ -493,13 +493,13 @@ npm run dev
 ## 常见问题
 
 **Q: 页面连不上钱包？**
-A: 确保 MetaMask 切到 Base Sepolia，刷新页面。
+A: 确保 MetaMask 切到 Sepolia，刷新页面。
 
 **Q: Deposit 报错？**
 A: 先点 Get Free USDC 等待成功后再 Deposit。
 
 **Q: Gasless Mint 转圈很久？**
-A: 后端在等交易确认，Base Sepolia 一般 5-15 秒，正常等待即可。
+A: 后端在等交易确认，Sepolia 一般 5-15 秒，正常等待即可。
 
 **Q: 余额没更新？**
 A: 余额每 5 秒自动刷新，也可以刷新页面。

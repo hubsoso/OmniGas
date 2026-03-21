@@ -8,11 +8,12 @@ const claimed = new Set<string>()
 
 const rpcUrl = process.env.RPC_URL
 const relayerKey = process.env.RELAYER_PRIVATE_KEY as `0x${string}` | undefined
+const chain = sepolia
 
 const walletClient = relayerKey
   ? createWalletClient({
       account: privateKeyToAccount(relayerKey),
-      chain: sepolia,
+      chain,
       transport: http(rpcUrl),
     })
   : null

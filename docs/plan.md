@@ -143,7 +143,7 @@ DemoExecutor: 0x...
 - [ ] 页面增加"领取测试 USDC"按钮，调 `POST /api/faucet`
 - [ ] 页面显示 Native ETH = 0（体现 gasless 效果）
 - [ ] 添加文案：`No ETH required · Gas sponsored by OmniGas`
-- [ ] 成功后展示 tx hash 链接（basescan.org）
+- [ ] 成功后展示 tx hash 链接（sepolia.etherscan.io）
 - [ ] 录制 demo 视频
 
 ---

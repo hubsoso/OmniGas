@@ -5,8 +5,10 @@ import { sepolia } from 'viem/chains'
 const VAULT_ABI = parseAbi(['function balanceOf(address token, address user) view returns (uint256)'])
 const NFT_ABI = parseAbi(['function balanceOf(address owner) view returns (uint256)'])
 
+const chain = sepolia
+
 const publicClient = createPublicClient({
-  chain: sepolia,
+  chain,
   transport: http(process.env.RPC_URL),
 })
 

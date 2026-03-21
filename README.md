@@ -102,14 +102,14 @@ Copy the printed addresses into `frontend/.env.local`.
 
 ```bash
 # frontend/.env.local
-NEXT_PUBLIC_CHAIN_ID=84532
+NEXT_PUBLIC_CHAIN_ID=11155111
 NEXT_PUBLIC_USDC_ADDRESS=0x...
 NEXT_PUBLIC_BOX_ADDRESS=0x...
 NEXT_PUBLIC_VAULT_ADDRESS=0x...
 NEXT_PUBLIC_NFT_ADDRESS=0x...
 NEXT_PUBLIC_EXECUTOR_ADDRESS=0x...
 RELAYER_PRIVATE_KEY=0x...        # server-side only
-RPC_URL=https://sepolia.base.org
+RPC_URL=https://rpc.sepolia.org
 ```
 
 ### 4. Run frontend
@@ -124,7 +124,7 @@ yarn dev   # http://localhost:3000
 
 ## Demo Flow
 
-1. Connect MetaMask (Base Sepolia)
+1. Connect MetaMask (Sepolia)
 2. Click **Get 10 Free USDC** — faucet mints MockUSDC to your wallet
 3. Click **Deposit 10 USDC** — approve + deposit (2 MetaMask confirmations)
 4. Confirm your wallet shows **0 ETH**
