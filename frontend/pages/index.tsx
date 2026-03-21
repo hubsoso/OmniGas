@@ -131,6 +131,7 @@ const WalletHome: NextPage = () => {
   // 钱包账户
   const [accounts, setAccounts] = useState<string[]>([])
   const [current, setCurrent] = useState<string>('')
+  const [primaryAccount, setPrimaryAccount] = useState<string>('') // 当前设备的主账户
   const [showLogin, setShowLogin] = useState(false)
   const [showSwitcher, setShowSwitcher] = useState(false)
   const [pendingAction, setPendingAction] = useState<PendingAction>('')
@@ -178,6 +179,18 @@ const WalletHome: NextPage = () => {
     window.ethereum.on('accountsChanged', handler)
     return () => window.ethereum.removeListener?.('accountsChanged', handler)
   }, [])
+
+  // 主账户初始化（从 localStorage 加载）
+  useEffect(() => {
+    const stored = localStorage.getItem('omngas_primary_account')
+    if (stored && accounts.includes(stored.toLowerCase())) {
+      setPrimaryAccount(stored.toLowerCase())
+    } else if (accounts.length > 0) {
+      // 如果已保存的主账户不在列表中，清空
+      setPrimaryAccount('')
+      localStorage.removeItem('omngas_primary_account')
+    }
+  }, [accounts])
 
   const executeAction = useCallback((action: PendingAction) => {
     if (action === 'swap') window.location.href = '/swap'
@@ -358,6 +371,12 @@ const WalletHome: NextPage = () => {
     }
   }, [current, omnigasToken, refreshBalances])
 
+  const setPrimaryAccountTo = useCallback((account: string) => {
+    if (!accounts.includes(account)) return
+    localStorage.setItem('omngas_primary_account', account.toLowerCase())
+    setPrimaryAccount(account.toLowerCase())
+  }, [accounts])
+
   const onOmnigasDeposit = useCallback(async () => {
     if (!current || !vaultAddress) { setOmnigasMsg('请先连接钱包'); return }
     const cfg = tokenConfig[omnigasToken]
@@ -467,6 +486,7 @@ const WalletHome: NextPage = () => {
   }, [current, getWalletClient, refreshBalances, selectedToken])
 
   const onMint = useCallback(async () => {
+    // 📌 任务#5：若当前 !== primaryAccount，在这里显示确认框
     if (!current || !selectedToken?.address) { setMsg('请选择 USDC 或 BOX'); return }
     setMinting(true); setMsg(''); setTxHash('')
     try {
@@ -570,12 +590,15 @@ const WalletHome: NextPage = () => {
         </div>
       )}
 
-      {/* 账户切换底部弹出 */}
+      {/* 账户切换居中弹出 */}
       {showSwitcher && (
-        <div className={styles.overlay} onClick={() => setShowSwitcher(false)}>
-          <div className={styles.bottomSheet} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.sheetHandle} />
-            <h3 className={styles.sheetTitle}>切换账户</h3>
+        <div className={styles.overlayCenter} onClick={() => setShowSwitcher(false)}>
+          <div className={styles.omnigasSheetCenter} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.omnigasHeader}>
+              <h3 className={styles.omnigasTitle}>切换账户</h3>
+              <button className={styles.testClose} onClick={() => setShowSwitcher(false)}>✕</button>
+            </div>
+            {/* 📌 任务#7：添加主账户标记和"设为主账户"按钮 */}
             {accounts.map((acc) => (
               <button
                 key={acc}
@@ -641,6 +664,8 @@ const WalletHome: NextPage = () => {
               <button className={styles.testClose} onClick={() => setShowOmnigas(false)}>✕</button>
             </div>
 
+            {/* 📌 任务#2：检测子账户提示 - 若当前 !== primaryAccount 则显示蓝色提示卡片 */}
+
             {/* 充值代币 selector */}
             <div className={styles.omnigasSection}>
               <div className={styles.omnigasLabel}>充值代币</div>
@@ -703,13 +728,6 @@ const WalletHome: NextPage = () => {
               </a>
             )}
 
-            {/* 领取测试币（Sepolia） */}
-            {isSepoliaMode && (
-              <button className={styles.omnigasFaucetBtn} onClick={onOmniClaim} disabled={omnigasLoading}>
-                {omnigasLoading ? '处理中...' : `领取测试 ${omnigasToken}`}
-              </button>
-            )}
-
             {/* 充值按钮 */}
             <button className={styles.omnigasDepositBtn} onClick={onOmnigasDeposit} disabled={omnigasLoading}>
               {omnigasLoading ? '充值中...' : '充值'}
@@ -764,6 +782,7 @@ const WalletHome: NextPage = () => {
             {isSepoliaMode && current && (
               <div className={styles.testSection}>
                 <div className={styles.testLabel}>Vault 余额</div>
+                {/* 📌 任务#4：优化显示 - 分别显示「自有」「代付可用」「合计」 */}
                 {balances.effectivePayer && balances.effectivePayer.toLowerCase() !== current.toLowerCase() && (
                   <div className={styles.testPayerHint}>
                     代付方：{balances.effectivePayer.slice(0, 10)}...
@@ -778,6 +797,7 @@ const WalletHome: NextPage = () => {
             )}
 
             {/* 委托管理 */}
+            {/* 📌 任务#6：简化 UI - 隐藏手动授权输入框，只显示只读信息 */}
             {isSepoliaMode && current && (
               <div className={styles.testSection}>
                 <div className={styles.testLabel}>委托管理</div>
