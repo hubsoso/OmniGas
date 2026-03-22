@@ -10,7 +10,10 @@ import '@uniswap/widgets/fonts.css'
 
 import { connectors, useActiveProvider } from '../connectors'
 import { JSON_RPC_URL } from '../constants'
+import { pickSelectedAccount } from '../lib/selectedAccount'
+import { THEME_ORDER, type ThemeMode, useThemeMode } from '../lib/theme'
 import { useCallback, useEffect, useState } from 'react'
+import styles from '../styles/Swap.module.css'
 
 const SwapWidget = dynamic<SwapWidgetProps>(
   () => import('@uniswap/widgets').then((mod) => mod.SwapWidget),
@@ -20,7 +23,8 @@ const SwapWidget = dynamic<SwapWidgetProps>(
 const UNI = '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'
 const USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
 const WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-const WIDGET_SUPPORTED_CHAIN_IDS = new Set([1, 3, 4, 5, 10, 42, 69, 137, 80001, 42161, 421611])
+const ETHEREUM_MAINNET_CHAIN_ID = 1
+const WIDGET_SUPPORTED_CHAIN_IDS = new Set([ETHEREUM_MAINNET_CHAIN_ID, 10, 137, 42161])
 const WIDGET_TOKENS: TokenInfo[] = [
   {
     chainId: 1,
@@ -45,19 +49,16 @@ const WIDGET_TOKENS: TokenInfo[] = [
   },
 ]
 
-type ThemeMode = 'system' | 'dark' | 'light'
-const THEME_ORDER: ThemeMode[] = ['system', 'dark', 'light']
-
 const SwapPage: NextPage = () => {
   const provider = useActiveProvider()
-  const { account } = useWeb3React()
+  const { account, accounts } = useWeb3React()
   const router = useRouter()
-  const [themeMode, setThemeMode] = useState<ThemeMode>('system')
-  const [systemDark, setSystemDark] = useState(false)
+  const { themeMode, isLight, setThemeMode } = useThemeMode()
   const [providerChainId, setProviderChainId] = useState<number | null>(null)
+  const activeAccount = pickSelectedAccount(accounts ?? (account ? [account] : []), account || '')
 
   const widgetSupportsConnectedChain = providerChainId !== null && WIDGET_SUPPORTED_CHAIN_IDS.has(providerChainId)
-  const isLight = themeMode === 'light' || (themeMode === 'system' && !systemDark)
+  const isWrongNetwork = providerChainId !== null && providerChainId !== ETHEREUM_MAINNET_CHAIN_ID
 
   const widgetTheme: Theme = isLight
     ? {
@@ -74,7 +75,7 @@ const SwapPage: NextPage = () => {
         hint: '#9ca3af',
         onAccent: '#ffffff',
         success: '#24c26a',
-        borderRadius: 1.4,
+        borderRadius: 1.65,
         fontFamily: "'Avenir Next', 'Segoe UI', sans-serif",
         fontFamilyCode: "'SF Mono', 'Courier New', monospace",
         tokenColorExtraction: false,
@@ -93,29 +94,27 @@ const SwapPage: NextPage = () => {
         hint: '#7d8596',
         onAccent: '#ffffff',
         success: '#24c26a',
-        borderRadius: 1.4,
+        borderRadius: 1.65,
         fontFamily: "'Avenir Next', 'Segoe UI', sans-serif",
         fontFamilyCode: "'SF Mono', 'Courier New', monospace",
         tokenColorExtraction: false,
       }
 
-  useEffect(() => {
-    const saved = localStorage.getItem('wallet-theme') as ThemeMode | null
-    if (saved && THEME_ORDER.includes(saved)) {
-      setThemeMode(saved)
-    }
-
-    const mq = window.matchMedia('(prefers-color-scheme: dark)')
-    setSystemDark(mq.matches)
-    const handler = (event: MediaQueryListEvent) => setSystemDark(event.matches)
-    mq.addEventListener('change', handler)
-
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-
   const connectMetaMask = useCallback(async () => {
     const [connector] = connectors[0]
     await connector.activate()
+  }, [])
+
+  const switchToMainnet = useCallback(async () => {
+    const ethereum = typeof window !== 'undefined' ? (window as Window & { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> } }).ethereum : undefined
+    if (!ethereum) {
+      return
+    }
+
+    await ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x1' }],
+    })
   }, [])
 
   useEffect(() => {
@@ -156,85 +155,44 @@ const SwapPage: NextPage = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '24px',
-          background: isLight
-            ? 'linear-gradient(180deg, #eef2ff 0%, #f8fafc 100%)'
-            : 'linear-gradient(180deg, #0d1020 0%, #12162a 100%)',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '460px',
-            borderRadius: '28px',
-            padding: '16px',
-            background: isLight ? 'rgba(255,255,255,0.76)' : 'rgba(18,22,39,0.78)',
-            border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(255,255,255,0.08)',
-            boxShadow: isLight
-              ? '0 22px 60px rgba(99,102,241,0.14)'
-              : '0 22px 60px rgba(0,0,0,0.42)',
-            backdropFilter: 'blur(18px)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px',
-              marginBottom: '12px',
-            }}
-          >
+      <div className={[styles.page, isLight ? styles.light : styles.dark].join(' ')}>
+        <div className={styles.shell}>
+          <div className={styles.toolbar}>
             <button
+              type="button"
               onClick={() => router.back()}
               aria-label="Go back"
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '999px',
-                border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(255,255,255,0.1)',
-                background: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.06)',
-                color: isLight ? '#111827' : '#f9fafb',
-                fontSize: '18px',
-                cursor: 'pointer',
-              }}
+              className={styles.backButton}
             >
               ←
             </button>
-            {account ? (
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 14px',
-                  borderRadius: '999px',
-                  background: isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.08)',
-                  border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(255,255,255,0.1)',
-                  color: isLight ? '#111827' : '#f9fafb',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                }}
-              >
-                {`${account.slice(0, 6)}...${account.slice(-4)}`}
-                {!widgetSupportsConnectedChain && providerChainId !== null ? ' · Unsupported for widget' : ''}
+            {activeAccount ? (
+              <div className={styles.walletBadge}>
+                {`${activeAccount.slice(0, 6)}...${activeAccount.slice(-4)}`}
+                {providerChainId !== null ? (
+                  <span className={styles.warning}>
+                    · {providerChainId === ETHEREUM_MAINNET_CHAIN_ID ? 'Ethereum Mainnet' : `Chain ${providerChainId}`}
+                  </span>
+                ) : null}
               </div>
             ) : null}
           </div>
 
-          <div
-            className="swap-widget-shell"
-            style={{
-              borderRadius: '24px',
-              overflow: 'hidden',
-            }}
-          >
+          {isWrongNetwork ? (
+            <div className={styles.networkNotice}>
+              <div>
+                <p className={styles.networkTitle}>Swap 仅支持 Ethereum Mainnet</p>
+                <p className={styles.networkText}>
+                  你当前连接的是 Chain {providerChainId}。切换到主网后，Uniswap widget 才能正常报价和发起交易。
+                </p>
+              </div>
+              <button type="button" onClick={switchToMainnet} className={styles.networkButton}>
+                切换到主网
+              </button>
+            </div>
+          ) : null}
+
+          <div className={`swap-widget-shell ${styles.widgetShell}`}>
             <SwapWidget
               jsonRpcEndpoint={JSON_RPC_URL}
               tokenList={WIDGET_TOKENS}
@@ -253,8 +211,44 @@ const SwapPage: NextPage = () => {
       </div>
 
       <style jsx global>{`
+        .swap-widget-shell > div {
+          border-radius: 26px !important;
+          box-shadow: none !important;
+        }
+
+        .swap-widget-shell [data-testid='settings-icon-button'],
+        .swap-widget-shell [data-testid='swap-button'],
+        .swap-widget-shell button {
+          transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease !important;
+        }
+
+        .swap-widget-shell [data-testid='swap-button']:hover,
+        .swap-widget-shell button:hover {
+          transform: translateY(-1px);
+        }
+
+        .swap-widget-shell button:focus-visible,
+        .swap-widget-shell input:focus-visible {
+          outline: none !important;
+          box-shadow: 0 0 0 4px ${isLight ? 'rgba(34, 197, 94, 0.18)' : 'rgba(52, 211, 153, 0.24)'} !important;
+        }
+
+        .swap-widget-shell input,
+        .swap-widget-shell button,
+        .swap-widget-shell a {
+          font-family: 'Avenir Next', 'Segoe UI', sans-serif !important;
+        }
+
         .swap-widget-shell a[href='https://uniswap.org/'] {
           display: none !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .swap-widget-shell [data-testid='settings-icon-button'],
+          .swap-widget-shell [data-testid='swap-button'],
+          .swap-widget-shell button {
+            transition: none !important;
+          }
         }
       `}</style>
     </>
