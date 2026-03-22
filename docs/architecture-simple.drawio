@@ -1,0 +1,248 @@
+<mxfile host="app.diagrams.net" modified="2026-03-22T00:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram name="OmniGas 业务流程" id="omnigas-simple">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="1">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ══════════════════════════════════ -->
+        <!-- 标题                              -->
+        <!-- ══════════════════════════════════ -->
+
+        <mxCell id="title" value="OmniGas · 全能服务费  —  无需持有 ETH，轻松上链" style="text;fontSize=22;fontStyle=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="100" y="30" width="970" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="subtitle" value="用稳定币预存「全能服务费」，之后所有链上操作由系统代缴 Gas，用户无感完成。" style="text;fontSize=13;align=center;fillColor=none;strokeColor=none;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="100" y="68" width="970" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════ -->
+        <!-- 步骤 1：充值                       -->
+        <!-- ══════════════════════════════════ -->
+
+        <mxCell id="step1-bg" value="" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="60" y="130" width="200" height="560" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step1-label" value="① 一次性充值" style="text;fontSize=13;fontStyle=1;align=center;fillColor=none;strokeColor=none;fontColor=#23527c;" vertex="1" parent="1">
+          <mxGeometry x="60" y="136" width="200" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user1" value="👤 用户" style="shape=mxgraph.basic.person;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="110" y="175" width="60" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s1-arrow1" value="用 USDC / BOX&#xa;存入服务费池" style="edgeStyle=orthogonalEdgeStyle;fontSize=11;exitX=0.5;exitY=1;exitDX=0;exitDY=0;entryX=0.5;entryY=0;entryDX=0;entryDY=0;" edge="1" source="user1" target="pool" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="pool" value="🏦 全能服务费资金池&#xa;(GasVault)&#xa;─────────────────&#xa;余额：0.8 USDC" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="340" width="160" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s1-note" value="✅ 仅此一步需要&#xa;自己支付少量 Gas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="90" y="460" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s1-desc" value="支持多账号共享服务费&#xa;（企业代付场景）" style="text;fontSize=10;align=center;fillColor=none;strokeColor=none;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="75" y="630" width="190" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════ -->
+        <!-- 步骤 2：用户发起操作               -->
+        <!-- ══════════════════════════════════ -->
+
+        <mxCell id="step2-bg" value="" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="290" y="130" width="200" height="560" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step2-label" value="② 发起操作" style="text;fontSize=13;fontStyle=1;align=center;fillColor=none;strokeColor=none;fontColor=#2d6a2d;" vertex="1" parent="1">
+          <mxGeometry x="290" y="136" width="200" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="user2" value="👤 用户" style="shape=mxgraph.basic.person;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="175" width="60" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="action-nft" value="🖼 铸造 NFT&#xa;点击即发起" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="305" y="300" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="action-transfer" value="💸 代币转账&#xa;选地址 + 金额" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="305" y="380" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="action-more" value="⋯ 更多操作&#xa;（即将支持）" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontColor=#888888;strokeColor=#aaaaaa;" vertex="1" parent="1">
+          <mxGeometry x="305" y="460" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s2-note" value="无需持有 ETH&#xa;无需关心 Gas 价格" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="305" y="550" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e-user2-nft" value="" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" edge="1" source="user2" target="action-nft" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-user2-transfer" value="" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" edge="1" source="user2" target="action-transfer" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════ -->
+        <!-- 步骤 3：系统中继                   -->
+        <!-- ══════════════════════════════════ -->
+
+        <mxCell id="step3-bg" value="" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="520" y="130" width="200" height="560" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step3-label" value="③ 系统自动代缴" style="text;fontSize=13;fontStyle=1;align=center;fillColor=none;strokeColor=none;fontColor=#7d5c00;" vertex="1" parent="1">
+          <mxGeometry x="520" y="136" width="200" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="relayer-node" value="🤖 OmniGas 中继服务&#xa;(Relayer)" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="185" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="eth-pay" value="💎 代缴 ETH Gas&#xa;对用户透明" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="540" y="310" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="deduct" value="🔁 从服务费池扣除&#xa;手续费 (0.1~0.2 USDC)" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="540" y="400" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s3-note" value="系统操作，用户&#xa;无需任何额外确认" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="540" y="550" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════ -->
+        <!-- 步骤 4：链上结果                   -->
+        <!-- ══════════════════════════════════ -->
+
+        <mxCell id="step4-bg" value="" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="750" y="130" width="200" height="560" as="geometry" />
+        </mxCell>
+
+        <mxCell id="step4-label" value="④ 链上完成" style="text;fontSize=13;fontStyle=1;align=center;fillColor=none;strokeColor=none;fontColor=#7d3c00;" vertex="1" parent="1">
+          <mxGeometry x="750" y="136" width="200" height="24" as="geometry" />
+        </mxCell>
+
+        <mxCell id="result-nft" value="🖼 NFT 铸造成功&#xa;进入用户钱包" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="770" y="220" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="result-transfer" value="💸 代币到达&#xa;接收方地址" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="770" y="310" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="result-balance" value="📊 服务费余额更新&#xa;可随时查看 / 提现" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="770" y="400" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="result-chains" value="🌐 支持多链&#xa;Sepolia · Base Sepolia" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="770" y="490" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="s4-note" value="✅ 交易哈希实时返回&#xa;可在区块链浏览器查验" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="770" y="560" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ══════════════════════════════════ -->
+        <!-- 主流程连线                         -->
+        <!-- ══════════════════════════════════ -->
+
+        <!-- 步骤 1 → 2 -->
+        <mxCell id="arrow12" value="充值完成后" style="edgeStyle=orthogonalEdgeStyle;rounded=1;fontSize=11;fontStyle=1;strokeColor=#6c8ebf;strokeWidth=2;exitX=1;exitY=0.5;exitDX=0;exitDY=0;entryX=0;entryY=0.5;entryDX=0;entryDY=0;" edge="1" source="pool" target="action-nft" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="260" y="390" />
+              <mxPoint x="260" y="330" />
+              <mxPoint x="305" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 步骤 2 → 3：NFT -->
+        <mxCell id="arrow23a" value="请求中继" style="edgeStyle=orthogonalEdgeStyle;rounded=1;fontSize=11;fontStyle=1;strokeColor=#82b366;strokeWidth=2;" edge="1" source="action-nft" target="relayer-node" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 步骤 2 → 3：Transfer -->
+        <mxCell id="arrow23b" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;fontSize=11;strokeColor=#82b366;strokeWidth=2;" edge="1" source="action-transfer" target="relayer-node" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="410" />
+              <mxPoint x="505" y="410" />
+              <mxPoint x="505" y="215" />
+              <mxPoint x="540" y="215" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 步骤 3 内部 -->
+        <mxCell id="arrow-relay-eth" value="" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" edge="1" source="relayer-node" target="eth-pay" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="arrow-eth-deduct" value="" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" edge="1" source="eth-pay" target="deduct" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 步骤 3 → pool（扣费回溯） -->
+        <mxCell id="arrow-deduct-pool" value="扣除手续费" style="edgeStyle=orthogonalEdgeStyle;rounded=1;fontSize=10;strokeColor=#d6b656;strokeWidth=1.5;dashed=1;entryX=0.5;entryY=1;entryDX=0;entryDY=0;" edge="1" source="deduct" target="pool" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="540" y="430" />
+              <mxPoint x="480" y="430" />
+              <mxPoint x="480" y="490" />
+              <mxPoint x="170" y="490" />
+              <mxPoint x="170" y="440" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 步骤 3 → 4 -->
+        <mxCell id="arrow34a" value="上链成功" style="edgeStyle=orthogonalEdgeStyle;rounded=1;fontSize=11;fontStyle=1;strokeColor=#d79b00;strokeWidth=2;" edge="1" source="eth-pay" target="result-nft" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="340" />
+              <mxPoint x="720" y="250" />
+              <mxPoint x="770" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow34b" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;fontSize=11;strokeColor=#d79b00;strokeWidth=2;" edge="1" source="eth-pay" target="result-transfer" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="340" />
+              <mxPoint x="770" y="340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ══════════════════════════════════ -->
+        <!-- 底部亮点卡片                       -->
+        <!-- ══════════════════════════════════ -->
+
+        <mxCell id="highlight1" value="🚫 无需持有 ETH&#xa;用 USDC / BOX 即可上链" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#cccccc;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="730" width="210" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="highlight2" value="⚡ 一键完成&#xa;Gas 自动处理，操作无感" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#cccccc;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="290" y="730" width="210" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="highlight3" value="🤝 企业代付&#xa;团队共享同一服务费池" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#cccccc;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="730" width="210" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="highlight4" value="🌐 多链支持&#xa;Sepolia · Base Sepolia" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#cccccc;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="750" y="730" width="210" height="60" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
