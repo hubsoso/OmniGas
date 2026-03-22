@@ -400,12 +400,35 @@ const TransferPage: NextPage = () => {
             : (token === 'USDC' ? BASE_USDC_ADDRESS : BASE_BOX_ADDRESS)
           if (!tokenAddress) throw new Error(`${token} 合约地址未配置`)
 
-          console.log('[transfer] ERC20 转账准备:', {
+          const publicClientForSim = chainKey === 'sepolia' ? sepoliaPublic : baseSepoliaPublic
+          console.log('[transfer] ERC20 转账准备 - 先模拟验证:', {
             tokenAddress,
             to: getAddress(to),
             amount: transferAmount.toString(),
+            account: walletClient.account!.address,
             chainKey,
           })
+
+          // 模拟合约调用，提前捕获会失败的原因
+          try {
+            const { result } = await publicClientForSim.simulateContract({
+              account: walletClient.account!,
+              address: tokenAddress,
+              abi: erc20Abi,
+              functionName: 'transfer',
+              args: [getAddress(to), transferAmount],
+            })
+            console.log('[transfer] 模拟成功，result:', result)
+          } catch (simErr: any) {
+            console.error('[transfer] 模拟失败（这是 MetaMask 报错的原因）:', {
+              message: simErr?.message,
+              shortMessage: simErr?.shortMessage,
+              cause: simErr?.cause?.message,
+              metaMessages: simErr?.metaMessages,
+            })
+            throw simErr
+          }
+
           console.log('[transfer] 执行 writeContract...')
           hash = await walletClient.writeContract({
             account: walletClient.account!,
