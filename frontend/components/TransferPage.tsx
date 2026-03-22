@@ -154,6 +154,23 @@ const TransferPage: NextPage = () => {
     (effectiveMode === 'auto' && !canUseUserFunds && !canUseGasless)
   )
 
+  // 生成具体的余额不足提示信息
+  const insufficientBalanceMessage = (() => {
+    if (!insufficientBalance || parsedAmountValue === null) return ''
+    if (effectiveMode === 'user') {
+      if (ethBalance < minEthForGas) return 'ETH 不足，无法支付 Gas'
+      if (parsedAmountValue > selectedWalletBalanceValue) return `${token} 余额不足`
+    }
+    if (effectiveMode === 'gasless') {
+      return '全能服务费额度不足'
+    }
+    // auto 模式：区分具体原因
+    const hasEnoughToken = selectedWalletBalanceValue >= parsedAmountValue
+    if (!hasEnoughToken && !canUseGasless) return `${token} 余额不足`
+    if (hasEnoughToken && ethBalance < minEthForGas && !canUseGasless) return 'ETH 不足，全能服务费额度不足'
+    return '余额不足'
+  })()
+
   const connectWallet = useCallback(async () => {
     const [connector] = connectors[0]
     await connector.activate()
@@ -331,7 +348,7 @@ const TransferPage: NextPage = () => {
 
     if (effectiveMode === 'auto') {
       setTxHash('')
-      setSubmitMessage('余额不足')
+      setSubmitMessage(insufficientBalanceMessage || '余额不足')
       setSubmitStatus('error')
       return
     }
@@ -524,7 +541,7 @@ const TransferPage: NextPage = () => {
         ? `✓ ETH: ${walletBalances['ETH']}`
         : canUseGasless
           ? '✓ 使用全能服务费代付'
-          : '✗ 余额不足',
+          : insufficientBalanceMessage ? `✗ ${insufficientBalanceMessage}` : '✗ 余额不足',
     },
     user: {
       label: '用户资金转账',
@@ -786,7 +803,7 @@ const TransferPage: NextPage = () => {
                 ].join(' ')}
                 aria-live="polite"
               >
-                {insufficientBalance ? '余额不足' : submitMessage}
+                {insufficientBalance ? insufficientBalanceMessage : submitMessage}
               </p>
             ) : null}
             {txHash ? (
