@@ -289,32 +289,20 @@ const WalletHome: NextPage = () => {
   }, [router])
 
   const connectWallet = useCallback(async () => {
-    console.log('[connectWallet] 点击了添加账户按钮')
-    console.log('[connectWallet] window.ethereum:', window.ethereum)
     if (!window.ethereum) {
-      console.log('[connectWallet] MetaMask 未安装')
       alert('请先安装 MetaMask');
       return
     }
     try {
-      console.log('[connectWallet] 正在请求账户授权...')
       const accs: string[] = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      console.log('[connectWallet] 授权成功，账户:', accs)
 
-      // 检测是否有新账户（不在已连接列表中）
-      const newAccounts = accs.filter(acc => !accounts.map(a => a.toLowerCase()).includes(acc.toLowerCase()))
-      console.log('[connectWallet] 新账户:', newAccounts, '已有账户:', accounts)
-
-      if (newAccounts.length === 0) {
-        return
-      }
+      if (accs.length === 0) return
 
       const nextCurrent = pickSelectedAccount(accs, accs[0])
       setAccounts(accs)
       setCurrent(nextCurrent)
       setSelectedAccount(nextCurrent)
       setShowLogin(false); setShowSwitcher(false)
-      setMsg('✅ 账户已添加')
 
       // 连接成功后继续执行之前的动作
       if (pendingAction) {
@@ -322,15 +310,13 @@ const WalletHome: NextPage = () => {
         executeAction(pendingAction)
       }
     } catch (err: any) {
-      console.error('[connectWallet]', err)
-      // 用户拒绝或其他错误，保持弹出框打开
       if (err?.code === 4001) {
         setMsg('你已拒绝连接请求')
       } else {
         setMsg(`连接失败: ${err?.message || '未知错误'}`)
       }
     }
-  }, [pendingAction, executeAction, accounts])
+  }, [pendingAction, executeAction])
 
   const handleAction = useCallback((action: PendingAction) => {
     if (!current) { setPendingAction(action); setShowLogin(true); return }
@@ -869,7 +855,9 @@ const WalletHome: NextPage = () => {
               <span className={styles.chevron}>▾</span>
             </button>
           ) : (
-            <span className={styles.notConnected}>未连接</span>
+            <button className={styles.notConnected} onClick={connectWallet} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              {locale === 'zh' ? '🔗 点击连接钱包' : '🔗 Connect Wallet'}
+            </button>
           )}
 
           <div className={styles.topActions}>
