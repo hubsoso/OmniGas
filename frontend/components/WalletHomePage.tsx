@@ -508,13 +508,39 @@ const WalletHome: NextPage = () => {
 
   const getWalletClient = useCallback(async () => {
     if (!window.ethereum) throw new Error('请先安装 MetaMask')
+
+    // 显式请求账户权限，避免线上环境中点击授权没有拉起钱包确认。
+    const accounts: string[] = await window.ethereum.request({ method: 'eth_requestAccounts' })
+    if (!accounts || accounts.length === 0) throw new Error('无法从 MetaMask 获取账户')
+
     const chainId = await window.ethereum.request({ method: 'eth_chainId' })
     if (Number(chainId) !== CHAIN_ID) throw new Error(`请切换到 Sepolia (${CHAIN_ID})`)
-    return createWalletClient({ chain: APP_CHAIN, transport: custom(window.ethereum) })
-  }, [])
+
+    const normalizedCurrent = current.toLowerCase()
+    const matchedAccount = current
+      ? accounts.find((account) => account.toLowerCase() === normalizedCurrent)
+      : accounts[0]
+
+    if (current && !matchedAccount) {
+      throw new Error('请先在 MetaMask 中切换到当前选中的账户')
+    }
+
+    return createWalletClient({
+      account: (matchedAccount || accounts[0]) as `0x${string}`,
+      chain: APP_CHAIN,
+      transport: custom(window.ethereum),
+    })
+  }, [current])
 
   const onAuthorizeSubAccount = useCallback(async (subAccount: string) => {
-    if (!current || !vaultAddress) return
+    if (!current) {
+      alert('请先连接钱包')
+      return
+    }
+    if (!vaultAddress) {
+      alert('未配置 Vault 合约地址')
+      return
+    }
     setAuthorizingSubAccount(subAccount)
     try {
       // 前置检查：子账户是否已绑定其他 payer（失败则跳过，让合约自己校验）
@@ -552,7 +578,9 @@ const WalletHome: NextPage = () => {
   }, [current, getWalletClient, refreshSubAccountAuthStatus])
 
   const onAuthorize = useCallback(async () => {
-    if (!current || !delegateInput || !vaultAddress) { setMsg('请输入 wallet 地址'); return }
+    if (!current) { setMsg('请先连接钱包'); return }
+    if (!delegateInput) { setMsg('请输入 wallet 地址'); return }
+    if (!vaultAddress) { setMsg('未配置 Vault 合约地址'); return }
     setDelegating(true); setMsg(''); setTxHash('')
     try {
       const wc = await getWalletClient()
@@ -576,7 +604,9 @@ const WalletHome: NextPage = () => {
   }, [current, delegateInput, getWalletClient])
 
   const onRevoke = useCallback(async () => {
-    if (!current || !delegateInput || !vaultAddress) { setMsg('请输入 wallet 地址'); return }
+    if (!current) { setMsg('请先连接钱包'); return }
+    if (!delegateInput) { setMsg('请输入 wallet 地址'); return }
+    if (!vaultAddress) { setMsg('未配置 Vault 合约地址'); return }
     setDelegating(true); setMsg(''); setTxHash('')
     try {
       const wc = await getWalletClient()
@@ -600,7 +630,8 @@ const WalletHome: NextPage = () => {
   }, [current, delegateInput, getWalletClient])
 
   const onDetach = useCallback(async () => {
-    if (!current || !vaultAddress) return
+    if (!current) { setMsg('请先连接钱包'); return }
+    if (!vaultAddress) { setMsg('未配置 Vault 合约地址'); return }
     setDelegating(true); setMsg(''); setTxHash('')
     try {
       const wc = await getWalletClient()
