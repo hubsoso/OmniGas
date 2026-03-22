@@ -380,6 +380,7 @@ const TransferPage: NextPage = () => {
         setSubmitMessage('正在发起转账…')
         setSubmitStatus('pending')
         const walletClient = await getWalletClient()
+        console.log('[transfer] walletClient 已创建:', { chainKey, senderFromWallet: walletClient.account?.address })
 
         if (token === 'ETH') {
           console.log('[transfer] ETH 转账:', { to, value: transferAmount.toString() })
@@ -394,7 +395,14 @@ const TransferPage: NextPage = () => {
             : (token === 'USDC' ? BASE_USDC_ADDRESS : BASE_BOX_ADDRESS)
           if (!tokenAddress) throw new Error(`${token} 合约地址未配置`)
 
-          console.log('[transfer] ERC20 转账:', { tokenAddress, to, amount: transferAmount.toString() })
+          console.log('[transfer] ERC20 转账准备:', {
+            tokenAddress,
+            to: getAddress(to),
+            amount: transferAmount.toString(),
+            account: sender,
+            chainKey,
+          })
+          console.log('[transfer] 执行 writeContract...')
           hash = await walletClient.writeContract({
             account: sender,
             address: tokenAddress,
