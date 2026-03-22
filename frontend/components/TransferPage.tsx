@@ -922,3 +922,4 @@ const TransferPage: NextPage = () => {
   )
 }
 
+export default TransferPage
