@@ -238,7 +238,13 @@ const TransferPage: NextPage = () => {
     const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' })
     const expectedChainId = chainKey === 'sepolia' ? CHAIN_ID : 84532
     if (Number(chainIdHex) !== expectedChainId) throw new Error(`请切换到 ${CHAINS[chainKey].name} (${expectedChainId})`)
+
+    // 从 MetaMask 获取账户列表
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+    if (!accounts || accounts.length === 0) throw new Error('无法从 MetaMask 获取账户')
+
     return createWalletClient({
+      account: accounts[0] as `0x${string}`,
       chain: chainKey === 'sepolia' ? sepolia : baseSepolia,
       transport: custom(window.ethereum),
     })
@@ -402,6 +408,7 @@ const TransferPage: NextPage = () => {
           })
           console.log('[transfer] 执行 writeContract...')
           hash = await walletClient.writeContract({
+            account: walletClient.account!,
             address: tokenAddress,
             abi: erc20Abi,
             functionName: 'transfer',
