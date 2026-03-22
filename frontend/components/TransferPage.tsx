@@ -136,7 +136,11 @@ const TransferPage: NextPage = () => {
 
   // 智能决策逻辑
   const gasFeeValue = GASLESS_TRANSFER_FEES[token as keyof typeof GASLESS_TRANSFER_FEES] || 0n
-  const canUseUserFunds = selectedWalletBalanceValue > 0n && token !== 'ETH' // ETH 需要检查 gas 费用
+  const ethBalance = walletBalanceValues['ETH']
+  const minEthForGas = BigInt(100_000_000_000_000) // 0.0001 ETH
+
+  // 用户资金模式：需要有足够的 ETH 来支付 gas，以及足够的代币来转账
+  const canUseUserFunds = ethBalance >= minEthForGas && selectedWalletBalanceValue >= (parsedAmountValue !== null ? parsedAmountValue : 0n)
   const canUseGasless = selectedVaultBalanceValue >= (parsedAmountValue !== null ? parsedAmountValue + gasFeeValue : 0n)
 
   // 确定实际使用的模式
@@ -145,7 +149,7 @@ const TransferPage: NextPage = () => {
     : manualMode
 
   const insufficientBalance = parsedAmountValue !== null && (
-    (effectiveMode === 'user' && parsedAmountValue > selectedWalletBalanceValue) ||
+    (effectiveMode === 'user' && (ethBalance < minEthForGas || parsedAmountValue > selectedWalletBalanceValue)) ||
     (effectiveMode === 'gasless' && (parsedAmountValue + gasFeeValue) > selectedVaultBalanceValue) ||
     (effectiveMode === 'auto' && !canUseUserFunds && !canUseGasless)
   )
@@ -303,11 +307,19 @@ const TransferPage: NextPage = () => {
     }
 
     // 检查选中的模式是否可行
-    if (effectiveMode === 'user' && transferAmount > selectedWalletBalanceValue) {
-      setTxHash('')
-      setSubmitMessage('钱包余额不足')
-      setSubmitStatus('error')
-      return
+    if (effectiveMode === 'user') {
+      if (ethBalance < minEthForGas) {
+        setTxHash('')
+        setSubmitMessage('需要至少 0.0001 ETH 来支付 gas')
+        setSubmitStatus('error')
+        return
+      }
+      if (transferAmount > selectedWalletBalanceValue) {
+        setTxHash('')
+        setSubmitMessage(`${token} 余额不足`)
+        setSubmitStatus('error')
+        return
+      }
     }
 
     if (effectiveMode === 'gasless' && (transferAmount + gasFeeValue) > selectedVaultBalanceValue) {
@@ -363,7 +375,7 @@ const TransferPage: NextPage = () => {
             userAddress: sender,
             recipient: getAddress(to),
             token: tokenAddress,
-            amount: transferAmount.toString(),
+            amount: '0x' + transferAmount.toString(16),
             feeToken: tokenAddress,
           }),
         })
@@ -509,14 +521,14 @@ const TransferPage: NextPage = () => {
     auto: {
       label: '系统自动选择',
       description: canUseUserFunds
-        ? '✓ 你的钱包有余额'
+        ? `✓ ETH: ${walletBalances['ETH']}`
         : canUseGasless
           ? '✓ 使用 OmniGas 代付'
           : '✗ 余额不足',
     },
     user: {
       label: '用户资金转账',
-      description: `你的钱包: ${selectedWalletBalance} ${token}`,
+      description: `需要 ETH: ${walletBalances['ETH']}, ${token}: ${selectedWalletBalance}`,
     },
     gasless: {
       label: 'OmniGas 代付',
@@ -654,10 +666,23 @@ const TransferPage: NextPage = () => {
                 <div className={styles.amountHeader}>
                   <span className={styles.sectionTitle}>转账数量</span>
                   <div className={styles.balanceColumn}>
-                    {chainKey === 'sepolia' && selectedVaultBalance !== ZERO_BALANCE && (
+                    {effectiveMode === 'gasless' && chainKey === 'sepolia' && selectedVaultBalance !== ZERO_BALANCE && (
                       <span className={styles.vaultBalanceText}>OmniGas额度: {selectedVaultBalance}</span>
                     )}
-                    <span className={styles.walletBalanceText}>钱包: {selectedWalletBalance}</span>
+                    {effectiveMode === 'user' && (
+                      <>
+                        <span className={styles.walletBalanceText}>ETH: {walletBalances['ETH']}</span>
+                        <span className={styles.walletBalanceText}>{token}: {selectedWalletBalance}</span>
+                      </>
+                    )}
+                    {effectiveMode === 'auto' && (
+                      <>
+                        <span className={styles.walletBalanceText}>ETH: {walletBalances['ETH']}</span>
+                        {chainKey === 'sepolia' && selectedVaultBalance !== ZERO_BALANCE && (
+                          <span className={styles.vaultBalanceText}>OmniGas额度: {selectedVaultBalance}</span>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
 
