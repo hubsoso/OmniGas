@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "pages/api/balance.ts": {
+      "maxDuration": 15
+    },
+    "pages/api/faucet.ts": {
+      "maxDuration": 30
+    },
+    "pages/api/relay.ts": {
+      "maxDuration": 60
+    },
+    "pages/api/relay-transfer.ts": {
+      "maxDuration": 60
+    }
+  }
+}

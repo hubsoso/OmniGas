@@ -120,6 +120,51 @@ yarn install
 yarn dev   # http://localhost:3000
 ```
 
+### 5. Deploy to Vercel
+
+The Next.js app lives in `frontend/`, so set the Vercel project Root Directory to `frontend`.
+
+In the Vercel dashboard:
+
+1. Import this repository.
+2. Set `Root Directory` to `frontend`.
+3. Keep the framework as `Next.js`.
+4. Add the environment variables from `frontend/.env.example`, replacing placeholder addresses and `RELAYER_PRIVATE_KEY` with your real values.
+5. Deploy.
+
+If you use the CLI:
+
+```bash
+cd frontend
+vercel
+vercel --prod
+```
+
+Recommended environment variables for production:
+
+```bash
+NEXT_PUBLIC_CHAIN_ID=11155111
+NEXT_PUBLIC_RPC_URL=https://rpc.sepolia.org
+RPC_URL=https://rpc.sepolia.org
+NEXT_PUBLIC_USDC_ADDRESS=0x...
+NEXT_PUBLIC_BOX_ADDRESS=0x...
+NEXT_PUBLIC_VAULT_ADDRESS=0x...
+NEXT_PUBLIC_NFT_ADDRESS=0x...
+NEXT_PUBLIC_EXECUTOR_ADDRESS=0x...
+NEXT_PUBLIC_TRANSFER_EXECUTOR_ADDRESS=0x...
+BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
+NEXT_PUBLIC_BASE_USDC_ADDRESS=0x...
+NEXT_PUBLIC_BASE_BOX_ADDRESS=0x...
+NEXT_PUBLIC_BASE_EXECUTOR_ADDRESS=0x...
+NEXT_PUBLIC_BASE_TRANSFER_EXECUTOR_ADDRESS=0x...
+RELAYER_PRIVATE_KEY=0x...
+```
+
+Notes:
+
+- `RELAYER_PRIVATE_KEY` must be added as a server-side secret in Vercel and must not use the `NEXT_PUBLIC_` prefix.
+- `frontend/vercel.json` sets longer execution windows for the relay APIs so chain simulation and receipt waiting are less likely to time out during deployment runtime.
+
 ---
 
 ## Demo Flow
