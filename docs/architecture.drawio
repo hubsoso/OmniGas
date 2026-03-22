@@ -1,0 +1,316 @@
+<mxfile host="app.diagrams.net" modified="2026-03-22T00:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram name="OmniGas 核心架构" id="omnigas-arch">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ════════════════════════════════════════ -->
+        <!-- 区域背景框                              -->
+        <!-- ════════════════════════════════════════ -->
+
+        <!-- 用户层 -->
+        <mxCell id="zone-user" value="用户层 User Layer" style="swimlane;startSize=28;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;rounded=1;arcSize=4;swimlaneLine=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="340" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- 前端层 -->
+        <mxCell id="zone-fe" value="前端层 Frontend (Next.js)" style="swimlane;startSize=28;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;rounded=1;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="420" y="40" width="380" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- 后端 API 层 -->
+        <mxCell id="zone-api" value="后端中继层 Backend Relay (API Routes)" style="swimlane;startSize=28;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;rounded=1;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="840" y="40" width="400" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- Sepolia 合约层 -->
+        <mxCell id="zone-sepolia" value="Sepolia 链 (Hub Chain, ChainID: 11155111)" style="swimlane;startSize=28;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=13;fontStyle=1;rounded=1;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="280" width="760" height="480" as="geometry" />
+        </mxCell>
+
+        <!-- Base Sepolia 合约层 -->
+        <mxCell id="zone-base" value="Base Sepolia 链 (Secondary Chain, ChainID: 84532)" style="swimlane;startSize=28;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;rounded=1;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="840" y="280" width="400" height="220" as="geometry" />
+        </mxCell>
+
+        <!-- ════════════════════════════════════════ -->
+        <!-- 用户层节点                              -->
+        <!-- ════════════════════════════════════════ -->
+
+        <mxCell id="user" value="👤 用户 (MetaMask)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="zone-user">
+          <mxGeometry x="80" y="50" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="wallet" value="🔑 MetaMask 钱包&#xa;(ETH / USDC / BOX)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="zone-user">
+          <mxGeometry x="80" y="110" width="180" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ════════════════════════════════════════ -->
+        <!-- 前端层节点                              -->
+        <!-- ════════════════════════════════════════ -->
+
+        <mxCell id="fe-home" value="🏠 WalletHomePage&#xa;充值 / Gasless Mint" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="zone-fe">
+          <mxGeometry x="20" y="44" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fe-transfer" value="↔ TransferPage&#xa;Gasless Transfer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="zone-fe">
+          <mxGeometry x="200" y="44" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fe-note" value="支持 Sepolia &amp; Base Sepolia&#xa;三种转账模式：系统自动 / 用户资金 / 全能服务费代付" style="text;fontSize=10;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="zone-fe">
+          <mxGeometry x="10" y="108" width="360" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ════════════════════════════════════════ -->
+        <!-- 后端 API 层节点                         -->
+        <!-- ════════════════════════════════════════ -->
+
+        <mxCell id="api-relay" value="🔁 /api/relay&#xa;Gasless Mint 中继&#xa;支持跨链" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="zone-api">
+          <mxGeometry x="20" y="40" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-transfer" value="🔁 /api/relay-transfer&#xa;Gasless Transfer 中继&#xa;验证+模拟+执行" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="zone-api">
+          <mxGeometry x="210" y="40" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-balance" value="📊 /api/balance&#xa;GET: 查询 Vault 余额&#xa;/api/faucet: 领测试币" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="zone-api">
+          <mxGeometry x="110" y="110" width="180" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ════════════════════════════════════════ -->
+        <!-- Sepolia 合约层节点                      -->
+        <!-- ════════════════════════════════════════ -->
+
+        <!-- Relayer wallet -->
+        <mxCell id="relayer" value="🔐 Relayer Wallet&#xa;(持有 Sepolia ETH 支付 gas)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;" vertex="1" parent="zone-sepolia">
+          <mxGeometry x="290" y="50" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- GasVault -->
+        <mxCell id="vault" value="🏦 GasVault&#xa;─────────────────&#xa;balances[token][payer]&#xa;payerOf[wallet] → payer&#xa;─────────────────&#xa;deposit() / withdraw()&#xa;deduct() (仅 Executor)&#xa;authorize() / revoke()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;align=left;" vertex="1" parent="zone-sepolia">
+          <mxGeometry x="30" y="140" width="220" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- MockUSDC -->
+        <mxCell id="usdc" value="💵 MockUSDC&#xa;(6 decimals)&#xa;ERC20" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="zone-sepolia">
+          <mxGeometry x="30" y="330" width="100" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- MockBOX -->
+        <mxCell id="box" value="📦 MockBOX&#xa;(18 decimals)&#xa;ERC20" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="zone-sepolia">
+          <mxGeometry x="150" y="330" width="100" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- DemoExecutor -->
+        <mxCell id="demo-exec" value="⚙ DemoExecutor&#xa;───────────────&#xa;gaslessMint(user, feeToken)&#xa;1. vault.deduct(fee)&#xa;2. nft.mint(user)&#xa;fee: 0.2 USDC / 0.2 BOX" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;align=left;" vertex="1" parent="zone-sepolia">
+          <mxGeometry x="290" y="140" width="210" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- GaslessTransferExecutor -->
+        <mxCell id="transfer-exec" value="⚙ GaslessTransferExecutor&#xa;──────────────────────────&#xa;gaslessTransfer(user, recipient,&#xa;  token, amount, feeToken)&#xa;1. vault.deduct(fee)&#xa;2. vault.deduct(amount)&#xa;3. token.transfer(recipient, amount)&#xa;fee: 0.1 USDC / 0.1 BOX" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;align=left;" vertex="1" parent="zone-sepolia">
+          <mxGeometry x="520" y="140" width="220" height="150" as="geometry" />
+        </mxCell>
+
+        <!-- DemoNFT -->
+        <mxCell id="nft" value="🖼 DemoNFT&#xa;(ERC721)&#xa;mint(): onlyExecutor" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="zone-sepolia">
+          <mxGeometry x="290" y="320" width="140" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Recipient -->
+        <mxCell id="recipient" value="📨 Recipient Address&#xa;(转账接收方)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="zone-sepolia">
+          <mxGeometry x="520" y="320" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ════════════════════════════════════════ -->
+        <!-- Base Sepolia 层节点                     -->
+        <!-- ════════════════════════════════════════ -->
+
+        <mxCell id="base-exec" value="⚙ CrossChainExecutor&#xa;─────────────────────&#xa;gaslessMint(user)&#xa;(轻量, 仅铸造 NFT)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;align=left;" vertex="1" parent="zone-base">
+          <mxGeometry x="30" y="50" width="200" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="base-nft" value="🖼 Base DemoNFT&#xa;(ERC721)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="zone-base">
+          <mxGeometry x="260" y="60" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="base-note" value="💡 Sepolia 扣费 → Base Sepolia 铸造" style="text;fontSize=11;align=center;fillColor=none;strokeColor=none;fontStyle=2;" vertex="1" parent="zone-base">
+          <mxGeometry x="30" y="160" width="340" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- ════════════════════════════════════════ -->
+        <!-- 连接线                                  -->
+        <!-- ════════════════════════════════════════ -->
+
+        <!-- 用户 → 前端 -->
+        <mxCell id="e1" value="连接钱包" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;exitX=1;exitY=0.5;exitDX=0;exitDY=0;" edge="1" source="user" target="fe-home" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 用户 → 前端 (transfer) -->
+        <mxCell id="e2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;" edge="1" source="user" target="fe-transfer" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 用户 存入 GasVault (approve+deposit, 用户支付 gas) -->
+        <mxCell id="e3" value="approve + deposit&#xa;(用户支付 gas)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;dashed=1;strokeColor=#6c8ebf;fontColor=#6c8ebf;" edge="1" source="wallet" target="vault" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="210" y="150" />
+              <mxPoint x="210" y="420" />
+              <mxPoint x="140" y="420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 前端 → API relay -->
+        <mxCell id="e4" value="POST /api/relay&#xa;{userAddress, feeToken}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;" edge="1" source="fe-home" target="api-relay" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 前端 → API relay-transfer -->
+        <mxCell id="e5" value="POST /api/relay-transfer&#xa;{user, recipient, token, amount}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;" edge="1" source="fe-transfer" target="api-transfer" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 前端 → API balance -->
+        <mxCell id="e6" value="GET /api/balance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;dashed=1;" edge="1" source="fe-home" target="api-balance" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- API relay → Relayer -->
+        <mxCell id="e7" value="Relayer 签名调用" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;strokeColor=#d6b656;" edge="1" source="api-relay" target="relayer" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="260" />
+              <mxPoint x="390" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- API relay-transfer → Relayer -->
+        <mxCell id="e8" value="Relayer 签名调用" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;strokeColor=#d6b656;" edge="1" source="api-transfer" target="relayer" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1080" y="260" />
+              <mxPoint x="390" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Relayer → DemoExecutor -->
+        <mxCell id="e9" value="gaslessMint()" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;strokeColor=#d79b00;" edge="1" source="relayer" target="demo-exec" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Relayer → TransferExecutor -->
+        <mxCell id="e10" value="gaslessTransfer()" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;strokeColor=#d79b00;" edge="1" source="relayer" target="transfer-exec" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="390" y="220" />
+              <mxPoint x="630" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- DemoExecutor → GasVault (deduct fee) -->
+        <mxCell id="e11" value="deduct(fee)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;strokeColor=#d79b00;" edge="1" source="demo-exec" target="vault" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- DemoExecutor → DemoNFT (mint) -->
+        <mxCell id="e12" value="mint(user)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;strokeColor=#d79b00;" edge="1" source="demo-exec" target="nft" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- TransferExecutor → GasVault (deduct) -->
+        <mxCell id="e13" value="deduct(fee + amount)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;strokeColor=#d79b00;" edge="1" source="transfer-exec" target="vault" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="520" y="215" />
+              <mxPoint x="140" y="215" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- TransferExecutor → Recipient -->
+        <mxCell id="e14" value="token.transfer(recipient, amount)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;strokeColor=#d79b00;" edge="1" source="transfer-exec" target="recipient" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- GasVault holds USDC/BOX -->
+        <mxCell id="e15" value="持有" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;dashed=1;" edge="1" source="vault" target="usdc" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;dashed=1;" edge="1" source="vault" target="box" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Cross-chain: Relayer → Base CrossChainExecutor -->
+        <mxCell id="e17" value="跨链: gaslessMint()&#xa;(Sepolia 扣费)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;strokeColor=#b85450;fontColor=#b85450;dashed=1;" edge="1" source="relayer" target="base-exec" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="390" y="256" />
+              <mxPoint x="800" y="256" />
+              <mxPoint x="800" y="370" />
+              <mxPoint x="870" y="370" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Base CrossChainExecutor → Base DemoNFT -->
+        <mxCell id="e18" value="mint()" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;strokeColor=#b85450;" edge="1" source="base-exec" target="base-nft" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- API balance → GasVault -->
+        <mxCell id="e19" value="balanceOf()" style="edgeStyle=orthogonalEdgeStyle;rounded=0;fontSize=10;dashed=1;" edge="1" source="api-balance" target="vault" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1040" y="190" />
+              <mxPoint x="1040" y="270" />
+              <mxPoint x="800" y="270" />
+              <mxPoint x="800" y="460" />
+              <mxPoint x="260" y="460" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ════════════════════════════════════════ -->
+        <!-- 图例                                    -->
+        <!-- ════════════════════════════════════════ -->
+
+        <mxCell id="legend" value="图例 Legend" style="swimlane;startSize=24;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=12;fontStyle=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="840" y="540" width="400" height="190" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;dashed=1;" vertex="1" parent="legend">
+          <mxGeometry x="20" y="40" width="40" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1t" value="用户直接操作（需自付 gas）" style="text;fontSize=11;" vertex="1" parent="legend">
+          <mxGeometry x="870" y="574" width="240" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg2" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#d79b00;" vertex="1" parent="legend">
+          <mxGeometry x="20" y="70" width="40" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="leg2t" value="Relayer 调用合约（Relayer 支付 gas）" style="text;fontSize=11;" vertex="1" parent="legend">
+          <mxGeometry x="870" y="604" width="260" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg3" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;dashed=1;" vertex="1" parent="legend">
+          <mxGeometry x="20" y="100" width="40" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="leg3t" value="跨链调用 (Sepolia → Base Sepolia)" style="text;fontSize=11;" vertex="1" parent="legend">
+          <mxGeometry x="870" y="634" width="250" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="leg4t" value="🔑 核心流程:&#xa;1. 用户 deposit USDC/BOX → GasVault (自付 gas)&#xa;2. 用户点击操作 → Frontend → API&#xa;3. API 通过 Relayer 调用 Executor 合约&#xa;4. Executor 从 GasVault 扣除费用并执行操作" style="text;fontSize=11;align=left;" vertex="1" parent="legend">
+          <mxGeometry x="10" y="120" width="380" height="60" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
