@@ -832,10 +832,13 @@
 
 .chainSection {
   border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
 }
 
-.chainSection:last-child {
-  border-bottom: none;
+.chainDivider {
+  height: 1px;
+  background: var(--line);
 }
 
 .chainOption {

@@ -749,71 +749,75 @@ const TransferPage: NextPage = () => {
                 </div>
 
                 <div className={styles.chainList}>
-                  {(Object.entries(CHAINS) as Array<[ChainKey, typeof CHAINS[ChainKey]]>).map(([key, chain]) => {
-                    const isActive = chainKey === key
-                    return (
-                      <div key={key} className={styles.chainSection}>
-                        <button
-                          type="button"
-                          className={[styles.chainOption, isActive ? styles.chainOptionActive : ''].join(' ')}
-                          onClick={() => {
-                            setChainKey(key)
-                          }}
-                        >
-                          <div className={styles.chainOptionLeft}>
-                            <div className={styles.chainOptionIcon}>⛓️</div>
-                            <div>
-                              <div className={styles.chainOptionName}>{chain.name}</div>
-                              <div className={styles.chainOptionMeta}>Chain ID: {chain.chainId}</div>
+                  <div className={styles.chainSection}>
+                    {(Object.entries(CHAINS) as Array<[ChainKey, typeof CHAINS[ChainKey]]>).map(([key, chain], index) => {
+                      const isActive = chainKey === key
+                      return (
+                        <div key={key}>
+                          <button
+                            type="button"
+                            className={[styles.chainOption, isActive ? styles.chainOptionActive : ''].join(' ')}
+                            onClick={() => {
+                              setChainKey(key)
+                            }}
+                          >
+                            <div className={styles.chainOptionLeft}>
+                              <div className={styles.chainOptionIcon}>⛓️</div>
+                              <div>
+                                <div className={styles.chainOptionName}>{chain.name}</div>
+                                <div className={styles.chainOptionMeta}>Chain ID: {chain.chainId}</div>
+                              </div>
                             </div>
-                          </div>
-                          <span className={styles.chainOptionCheck}>{isActive ? '✓' : ''}</span>
-                        </button>
+                            <span className={styles.chainOptionCheck}>{isActive ? '✓' : ''}</span>
+                          </button>
 
-                        {isActive && (
-                          <div className={styles.tokenListInChain}>
-                            <div className={styles.tokenListTitle}>该链上的代币</div>
-                            {availableTokens.map((option) => {
-                              const isTokenActive = option.label === token
-                              return (
-                                <button
-                                  key={option.id}
-                                  type="button"
-                                  className={[styles.tokenItemInChain, isTokenActive ? styles.tokenItemInChainActive : ''].join(' ')}
-                                  onClick={() => {
-                                    setToken(option.label)
-                                  }}
-                                >
-                                  <div className={styles.tokenItemLeft}>
-                                    <div
-                                      className={[
-                                        styles.tokenItemIcon,
-                                        option.label === 'USDC' ? styles.tokenItemIconUsdc : '',
-                                        option.label === 'BOX' ? styles.tokenItemIconBox : '',
-                                        option.label === 'ETH' ? styles.tokenItemIconEth : '',
-                                      ].join(' ')}
-                                    >
-                                      {option.icon}
+                          {index === 0 && <div className={styles.chainDivider} />}
+
+                          {isActive && (
+                            <div className={styles.tokenListInChain}>
+                              <div className={styles.tokenListTitle}>该链上的代币</div>
+                              {availableTokens.map((option) => {
+                                const isTokenActive = option.label === token
+                                return (
+                                  <button
+                                    key={option.id}
+                                    type="button"
+                                    className={[styles.tokenItemInChain, isTokenActive ? styles.tokenItemInChainActive : ''].join(' ')}
+                                    onClick={() => {
+                                      setToken(option.label)
+                                    }}
+                                  >
+                                    <div className={styles.tokenItemLeft}>
+                                      <div
+                                        className={[
+                                          styles.tokenItemIcon,
+                                          option.label === 'USDC' ? styles.tokenItemIconUsdc : '',
+                                          option.label === 'BOX' ? styles.tokenItemIconBox : '',
+                                          option.label === 'ETH' ? styles.tokenItemIconEth : '',
+                                        ].join(' ')}
+                                      >
+                                        {option.icon}
+                                      </div>
+                                      <div>
+                                        <div className={styles.tokenItemName}>{option.label}</div>
+                                        <div className={styles.tokenItemCaption}>{option.caption}</div>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <div className={styles.tokenItemName}>{option.label}</div>
-                                      <div className={styles.tokenItemCaption}>{option.caption}</div>
+                                    <div className={styles.tokenItemRight}>
+                                      <div className={styles.tokenItemBalance}>
+                                        {walletBalances[option.label] ?? ZERO_BALANCE}
+                                      </div>
+                                      <span className={styles.tokenItemCheck}>{isTokenActive ? '●' : '○'}</span>
                                     </div>
-                                  </div>
-                                  <div className={styles.tokenItemRight}>
-                                    <div className={styles.tokenItemBalance}>
-                                      {walletBalances[option.label] ?? ZERO_BALANCE}
-                                    </div>
-                                    <span className={styles.tokenItemCheck}>{isTokenActive ? '●' : '○'}</span>
-                                  </div>
-                                </button>
-                              )
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 <div className={styles.pickerFooter}>
