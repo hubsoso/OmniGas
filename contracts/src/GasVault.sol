@@ -99,6 +99,15 @@ contract GasVault is Ownable {
         emit Deducted(token, user, payer, amount);
     }
 
+    // ─── 转账 ─────────────────────────────────────────────────────
+
+    // 仅 executor 可转账：从 vault 转账给指定地址
+    function executeTransfer(address token, address to, uint256 amount) external onlyExecutor onlySupported(token) {
+        require(to != address(0), "GasVault: invalid recipient");
+        require(amount > 0, "GasVault: zero amount");
+        IERC20(token).transfer(to, amount);
+    }
+
     // ─── 查询 ─────────────────────────────────────────────────────
 
     // 查询余额（传 payer 地址）

@@ -21,6 +21,13 @@ const TOKENS_BY_NETWORK = {
 
 const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS as `0x${string}` | undefined
 const BOX_ADDRESS = process.env.NEXT_PUBLIC_BOX_ADDRESS as `0x${string}` | undefined
+const TRANSFER_EXECUTOR_ADDRESS = process.env.NEXT_PUBLIC_TRANSFER_EXECUTOR_ADDRESS as
+  | `0x${string}`
+  | undefined
+const GASLESS_TRANSFER_FEES = {
+  USDC: BigInt(100_000), // 0.1 USDC (6 decimals)
+  BOX: BigInt(1e17), // 0.1 BOX (18 decimals)
+}
 const ZERO_BALANCE = '--'
 const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 11155111)
 const EXPLORER_TX = 'https://sepolia.etherscan.io/tx/'
@@ -60,6 +67,7 @@ const TransferPage: NextPage = () => {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'error' | 'success' | 'pending'>('idle')
   const [txHash, setTxHash] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [gaslessMode, setGaslessMode] = useState(false)
   const [tokenBalanceValues, setTokenBalanceValues] = useState<Record<string, bigint>>({
     USDC: 0n,
     BOX: 0n,
@@ -89,7 +97,10 @@ const TransferPage: NextPage = () => {
       return null
     }
   })()
-  const insufficientBalance = parsedAmountValue !== null && parsedAmountValue > selectedTokenBalanceValue
+
+  const gasFeeValue = gaslessMode ? GASLESS_TRANSFER_FEES[token as keyof typeof GASLESS_TRANSFER_FEES] || 0n : 0n
+  const totalDeductionValue = parsedAmountValue !== null ? parsedAmountValue + gasFeeValue : null
+  const insufficientBalance = totalDeductionValue !== null && totalDeductionValue > selectedTokenBalanceValue
 
   const refreshBalances = useCallback(async (walletAccount?: string) => {
     const nextAccount = walletAccount || activeAccount
@@ -190,43 +201,102 @@ const TransferPage: NextPage = () => {
       return
     }
 
-    if (transferAmount > selectedTokenBalanceValue) {
-      setTxHash('')
-      setSubmitMessage('余额不足')
-      setSubmitStatus('error')
-      return
+    // For gasless: check total deduction (amount + fee)
+    if (gaslessMode) {
+      const fee = gasFeeValue
+      const total = transferAmount + fee
+      if (total > selectedTokenBalanceValue) {
+        setTxHash('')
+        setSubmitMessage('余额不足（包括手续费）')
+        setSubmitStatus('error')
+        return
+      }
+      // Gasless only supports USDC and BOX
+      if (token === 'ETH') {
+        setTxHash('')
+        setSubmitMessage('OmniGas 仅支持 USDC 和 BOX 代币')
+        setSubmitStatus('error')
+        return
+      }
+    } else {
+      // For user-funded: only check transfer amount
+      if (transferAmount > selectedTokenBalanceValue) {
+        setTxHash('')
+        setSubmitMessage('余额不足')
+        setSubmitStatus('error')
+        return
+      }
     }
 
     try {
       setSubmitting(true)
       setTxHash('')
-      setSubmitMessage('正在发起转账…')
-      setSubmitStatus('pending')
-      const walletClient = await getWalletClient()
       const sender = getAddress(activeAccount)
 
       let hash: `0x${string}`
-      if (token === 'ETH') {
-        hash = await walletClient.sendTransaction({
-          account: sender,
-          to: getAddress(to),
-          value: transferAmount,
-        })
-      } else {
+
+      if (gaslessMode) {
+        // ─── Gasless Transfer (via Relayer) ─────────────────────────
         const tokenAddress = token === 'USDC' ? USDC_ADDRESS : BOX_ADDRESS
         if (!tokenAddress) throw new Error(`${token} 合约地址未配置`)
-        hash = await walletClient.writeContract({
-          account: sender,
-          address: tokenAddress,
-          abi: erc20Abi,
-          functionName: 'transfer',
-          args: [getAddress(to), transferAmount],
+
+        setSubmitMessage('正在通过 OmniGas 中继执行…')
+        setSubmitStatus('pending')
+
+        const response = await fetch('/api/relay-transfer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userAddress: sender,
+            recipient: getAddress(to),
+            token: tokenAddress,
+            amount: transferAmount.toString(),
+            feeToken: tokenAddress,
+          }),
         })
+
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data.error || 'Relay transfer failed')
+        }
+
+        hash = data.txHash
+
+        // Wait for receipt if available
+        setSubmitMessage('链上确认中…')
+        if (data.blockNumber) {
+          await publicClient.waitForTransactionReceipt({ hash })
+        }
+      } else {
+        // ─── User-Funded Transfer (MetaMask) ───────────────────────
+        setSubmitMessage('正在发起转账…')
+        setSubmitStatus('pending')
+        const walletClient = await getWalletClient()
+
+        if (token === 'ETH') {
+          hash = await walletClient.sendTransaction({
+            account: sender,
+            to: getAddress(to),
+            value: transferAmount,
+          })
+        } else {
+          const tokenAddress = token === 'USDC' ? USDC_ADDRESS : BOX_ADDRESS
+          if (!tokenAddress) throw new Error(`${token} 合约地址未配置`)
+          hash = await walletClient.writeContract({
+            account: sender,
+            address: tokenAddress,
+            abi: erc20Abi,
+            functionName: 'transfer',
+            args: [getAddress(to), transferAmount],
+          })
+        }
+
+        setSubmitMessage('交易已提交，等待链上确认…')
+        setSubmitStatus('pending')
+        await publicClient.waitForTransactionReceipt({ hash })
       }
 
-      setSubmitMessage('交易已提交，等待链上确认…')
-      setSubmitStatus('pending')
-      await publicClient.waitForTransactionReceipt({ hash })
+      // ─── Update State ──────────────────────────────────────────
       await refreshBalances(sender)
       setAmount('')
       setTxHash(hash)
@@ -239,7 +309,7 @@ const TransferPage: NextPage = () => {
     } finally {
       setSubmitting(false)
     }
-  }, [activeAccount, amount, getWalletClient, recipient, refreshBalances, selectedToken.decimals, selectedTokenBalanceValue, token])
+  }, [activeAccount, amount, gaslessMode, gasFeeValue, getWalletClient, recipient, refreshBalances, selectedToken.decimals, selectedTokenBalanceValue, token])
 
   useEffect(() => {
     let cancelled = false
@@ -337,6 +407,41 @@ const TransferPage: NextPage = () => {
 
               <div className={styles.divider} />
 
+              <label className={styles.section}>
+                <div className={styles.sectionHeader}>
+                  <span className={styles.sectionTitle}>转账方式</span>
+                </div>
+                <div className={styles.gaslessModeToggle}>
+                  <input
+                    type="checkbox"
+                    id="gaslessToggle"
+                    checked={gaslessMode}
+                    onChange={(e) => {
+                      const newMode = e.target.checked
+                      if (newMode && token === 'ETH') {
+                        // Can't use gasless with ETH
+                        return
+                      }
+                      setGaslessMode(newMode)
+                      if (submitMessage) {
+                        setSubmitMessage('')
+                        setSubmitStatus('idle')
+                      }
+                      if (txHash) setTxHash('')
+                    }}
+                    disabled={token === 'ETH'}
+                  />
+                  <label htmlFor="gaslessToggle" className={styles.gaslessModeLabel}>
+                    使用 OmniGas 代付 Gas
+                    {gaslessMode && token !== 'ETH' && (
+                      <span className={styles.gaslessFeeHint}> (手续费: 0.1 {token})</span>
+                    )}
+                  </label>
+                </div>
+              </label>
+
+              <div className={styles.divider} />
+
               <div className={styles.sectionButton} role="group" aria-label="转账代币与网络">
                 <div className={styles.sectionHeader}>
                   <span className={styles.sectionTitle}>转账代币与网络</span>
@@ -376,7 +481,14 @@ const TransferPage: NextPage = () => {
               <section className={styles.section}>
                 <div className={styles.amountHeader}>
                   <span className={styles.sectionTitle}>转账数量</span>
-                  <span className={styles.balanceText}>余额: {selectedTokenBalance}</span>
+                  <div className={styles.balanceColumn}>
+                    <span className={styles.balanceText}>余额: {selectedTokenBalance}</span>
+                    {gaslessMode && parsedAmountValue !== null && (
+                      <span className={styles.totalText}>
+                        总扣费: {formatTokenBalance(parsedAmountValue + gasFeeValue, selectedToken.decimals)} {token}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className={styles.amountRow}>
