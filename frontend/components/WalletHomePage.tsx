@@ -780,18 +780,31 @@ const WalletHome: NextPage = () => {
     }
     setMinting(true); setMsg(''); setTxHash('')
     try {
+      console.log('[onMint] 开始 Gasless Mint:', {
+        userAddress: current,
+        feeToken: selectedToken.address,
+        targetChain,
+      })
+
       const { response, data } = await fetchWithTimeout('/api/relay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userAddress: current, feeToken: selectedToken.address, targetChain }),
       })
+
+      console.log('[onMint] API 响应:', { status: response.status, data })
+
       if (!response.ok) throw new Error(data?.error || 'Relay 失败')
+
       const chainLabel = targetChain === 'base-sepolia' ? 'Base Sepolia' : 'Sepolia'
       setMsg(`Gasless Mint 成功（${chainLabel}）`)
       setTxHash(data.txHash)
       setTxChain(targetChain)
       await refreshBalances(current)
+
+      console.log('[onMint] 完成，txHash:', data.txHash)
     } catch (e: any) {
+      console.error('[onMint] 错误:', e)
       setMsg(e.message || 'Mint 失败')
     } finally {
       setMinting(false)
