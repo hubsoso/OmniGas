@@ -245,6 +245,8 @@ const TransferPage: NextPage = () => {
   }, [chainKey])
 
   const handleSubmit = useCallback(async () => {
+    console.log('[transfer] handleSubmit 开始:', { activeAccount, chainKey, token, effectiveMode })
+
     if (!activeAccount) {
       setTxHash('')
       setSubmitMessage('请先连接钱包')
@@ -284,6 +286,8 @@ const TransferPage: NextPage = () => {
       setSubmitStatus('error')
       return
     }
+
+    console.log('[transfer] 参数验证成功:', { to, rawAmount, transferAmount: transferAmount.toString() })
 
     if (transferAmount <= 0n) {
       setTxHash('')
@@ -326,6 +330,8 @@ const TransferPage: NextPage = () => {
       setTxHash('')
       const sender = getAddress(activeAccount)
 
+      console.log('[transfer] 准备执行:', { sender, effectiveMode, chainKey })
+
       let hash: `0x${string}`
 
       if (effectiveMode === 'gasless') {
@@ -338,9 +344,12 @@ const TransferPage: NextPage = () => {
         if (!tokenAddress) throw new Error(`${token} 合约地址未配置`)
         if (!TRANSFER_EXECUTOR_ADDRESS) throw new Error('Transfer executor 地址未配置')
 
+        console.log('[transfer] Gasless 模式:', { tokenAddress, TRANSFER_EXECUTOR_ADDRESS })
+
         setSubmitMessage('正在通过 OmniGas 中继执行…')
         setSubmitStatus('pending')
 
+        console.log('[transfer] 调用 relay-transfer API...')
         const response = await fetch('/api/relay-transfer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -354,6 +363,7 @@ const TransferPage: NextPage = () => {
         })
 
         const data = await response.json()
+        console.log('[transfer] relay-transfer 响应:', { status: response.status, data })
         if (!response.ok) {
           throw new Error(data.error || 'Relay transfer failed')
         }
@@ -366,11 +376,13 @@ const TransferPage: NextPage = () => {
         }
       } else {
         // ─── User-Funded Transfer (MetaMask) ───────────────────────
+        console.log('[transfer] 用户资金转账模式')
         setSubmitMessage('正在发起转账…')
         setSubmitStatus('pending')
         const walletClient = await getWalletClient()
 
         if (token === 'ETH') {
+          console.log('[transfer] ETH 转账:', { to, value: transferAmount.toString() })
           hash = await walletClient.sendTransaction({
             account: sender,
             to: getAddress(to),
@@ -381,6 +393,8 @@ const TransferPage: NextPage = () => {
             ? (token === 'USDC' ? USDC_ADDRESS : BOX_ADDRESS)
             : (token === 'USDC' ? BASE_USDC_ADDRESS : BASE_BOX_ADDRESS)
           if (!tokenAddress) throw new Error(`${token} 合约地址未配置`)
+
+          console.log('[transfer] ERC20 转账:', { tokenAddress, to, amount: transferAmount.toString() })
           hash = await walletClient.writeContract({
             account: sender,
             address: tokenAddress,
@@ -390,6 +404,7 @@ const TransferPage: NextPage = () => {
           })
         }
 
+        console.log('[transfer] 交易已提交:', { hash })
         setSubmitMessage('交易已提交，等待链上确认…')
         setSubmitStatus('pending')
         const publicClient = chainKey === 'sepolia' ? sepoliaPublic : baseSepoliaPublic
@@ -397,12 +412,19 @@ const TransferPage: NextPage = () => {
       }
 
       // ─── Update State ──────────────────────────────────────────
+      console.log('[transfer] 转账成功:', { hash })
       await refreshBalances(sender)
       setAmount('')
       setTxHash(hash)
       setSubmitMessage(`${token} 转账成功`)
       setSubmitStatus('success')
     } catch (error: any) {
+      console.error('[transfer] 错误:', {
+        message: error?.message,
+        shortMessage: error?.shortMessage,
+        cause: error?.cause,
+      })
+
       setTxHash('')
       setSubmitMessage(error?.shortMessage || error?.message || '转账失败')
       setSubmitStatus('error')
