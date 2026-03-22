@@ -324,7 +324,7 @@ const TransferPage: NextPage = () => {
 
     if (effectiveMode === 'gasless' && (transferAmount + gasFeeValue) > selectedVaultBalanceValue) {
       setTxHash('')
-      setSubmitMessage('OmniGas 额度不足')
+      setSubmitMessage('全能服务费额度不足')
       setSubmitStatus('error')
       return
     }
@@ -338,7 +338,7 @@ const TransferPage: NextPage = () => {
 
     if (effectiveMode === 'gasless' && token === 'ETH') {
       setTxHash('')
-      setSubmitMessage('OmniGas 仅支持 USDC 和 BOX')
+      setSubmitMessage('全能服务费仅支持 USDC 和 BOX')
       setSubmitStatus('error')
       return
     }
@@ -364,7 +364,7 @@ const TransferPage: NextPage = () => {
 
         console.log('[transfer] Gasless 模式:', { tokenAddress, TRANSFER_EXECUTOR_ADDRESS })
 
-        setSubmitMessage('正在通过 OmniGas 中继执行…')
+        setSubmitMessage('正在通过全能服务费中继执行…')
         setSubmitStatus('pending')
 
         console.log('[transfer] 调用 relay-transfer API...')
@@ -523,7 +523,7 @@ const TransferPage: NextPage = () => {
       description: canUseUserFunds
         ? `✓ ETH: ${walletBalances['ETH']}`
         : canUseGasless
-          ? '✓ 使用 OmniGas 代付'
+          ? '✓ 使用全能服务费代付'
           : '✗ 余额不足',
     },
     user: {
@@ -531,8 +531,8 @@ const TransferPage: NextPage = () => {
       description: `需要 ETH: ${walletBalances['ETH']}, ${token}: ${selectedWalletBalance}`,
     },
     gasless: {
-      label: 'OmniGas 代付',
-      description: `OmniGas 额度: ${selectedVaultBalance} ${token}${vaultPayer && vaultPayer !== activeAccount ? ` (由 ${shortAddress(vaultPayer)} 支付)` : ''}`,
+      label: '全能服务费代付',
+      description: `全能服务费额度: ${selectedVaultBalance} ${token}${vaultPayer && vaultPayer !== activeAccount ? ` (由 ${shortAddress(vaultPayer)} 支付)` : ''}`,
     },
   }
 
@@ -667,7 +667,7 @@ const TransferPage: NextPage = () => {
                   <span className={styles.sectionTitle}>转账数量</span>
                   <div className={styles.balanceColumn}>
                     {effectiveMode === 'gasless' && chainKey === 'sepolia' && selectedVaultBalance !== ZERO_BALANCE && (
-                      <span className={styles.vaultBalanceText}>OmniGas额度: {selectedVaultBalance}</span>
+                      <span className={styles.vaultBalanceText}>全能服务费额度: {selectedVaultBalance}</span>
                     )}
                     {effectiveMode === 'user' && (
                       <>
@@ -679,7 +679,7 @@ const TransferPage: NextPage = () => {
                       <>
                         <span className={styles.walletBalanceText}>ETH: {walletBalances['ETH']}</span>
                         {chainKey === 'sepolia' && selectedVaultBalance !== ZERO_BALANCE && (
-                          <span className={styles.vaultBalanceText}>OmniGas额度: {selectedVaultBalance}</span>
+                          <span className={styles.vaultBalanceText}>全能服务费额度: {selectedVaultBalance}</span>
                         )}
                       </>
                     )}

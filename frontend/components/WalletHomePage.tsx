@@ -355,7 +355,7 @@ const WalletHome: NextPage = () => {
         availableTitle: '核心功能',
         coreTag: '核心',
         omnigas: '全能服务费',
-        omnigasSub: 'Gasless 服务费资金池',
+        omnigasSub: '全能服务费资金池',
         transfer: '转账',
         transferSub: '快速发起资产转账',
         progressEyebrow: '后续开发',
