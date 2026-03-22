@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "clean": "rm -rf .next",
-    "dev": "npm run clean && next-https dev",
+    "dev": "npm run clean && npx next-https dev",
     "build": "npm run clean && next build",
     "start": "next start",
     "lint": "next lint"
