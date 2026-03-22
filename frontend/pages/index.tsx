@@ -140,6 +140,7 @@ const WalletHome: NextPage = () => {
   const [showTest, setShowTest] = useState(false)
   const [networkMode, setNetworkMode] = useState<NetworkMode>('sepolia')
   const [gasToken, setGasToken] = useState<GasToken>('USDC')
+  const [targetChain, setTargetChain] = useState<'sepolia' | 'base-sepolia'>('sepolia')
   const [balances, setBalances] = useState({ usdcBalance: '0', boxBalance: '0', nftCount: '0', effectivePayer: '' })
   const [claiming, setClaiming] = useState(false)
   const [claimingBox, setClaimingBox] = useState(false)
@@ -147,6 +148,7 @@ const WalletHome: NextPage = () => {
   const [minting, setMinting] = useState(false)
   const [msg, setMsg] = useState('')
   const [txHash, setTxHash] = useState('')
+  const [txChain, setTxChain] = useState<'sepolia' | 'base-sepolia'>('sepolia')
 
   // 全能服务费面板
   const [showOmnigas, setShowOmnigas] = useState(false)
@@ -605,18 +607,20 @@ const WalletHome: NextPage = () => {
       const { response, data } = await fetchWithTimeout('/api/relay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userAddress: current, feeToken: selectedToken.address }),
+        body: JSON.stringify({ userAddress: current, feeToken: selectedToken.address, targetChain }),
       })
       if (!response.ok) throw new Error(data?.error || 'Relay 失败')
-      setMsg('Gasless Mint 成功')
+      const chainLabel = targetChain === 'base-sepolia' ? 'Base Sepolia' : 'Sepolia'
+      setMsg(`Gasless Mint 成功（${chainLabel}）`)
       setTxHash(data.txHash)
+      setTxChain(targetChain)
       await refreshBalances(current)
     } catch (e: any) {
       setMsg(e.message || 'Mint 失败')
     } finally {
       setMinting(false)
     }
-  }, [current, refreshBalances, selectedToken])
+  }, [current, refreshBalances, selectedToken, targetChain, primaryAccount, subAccountAuthStatus])
 
   // ── JSX ──────────────────────────────────────────────
   return (
@@ -999,6 +1003,27 @@ const WalletHome: NextPage = () => {
               </div>
             </div>
 
+            {/* 目标链选择 */}
+            {isSepoliaMode && gasToken !== 'ETH' && (
+              <div className={styles.testSection}>
+                <div className={styles.testLabel}>目标链（Mint 到哪条链）</div>
+                <div className={styles.testRow}>
+                  {([
+                    { id: 'sepolia', label: 'Sepolia' },
+                    { id: 'base-sepolia', label: 'Base Sepolia' },
+                  ] as const).map((c) => (
+                    <button
+                      key={c.id}
+                      className={[styles.testChip, targetChain === c.id ? styles.testChipActive : ''].join(' ')}
+                      onClick={() => setTargetChain(c.id)}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Vault 余额 */}
             {isSepoliaMode && current && (() => {
               const isSubAccount = primaryAccount && current !== primaryAccount
@@ -1116,11 +1141,11 @@ const WalletHome: NextPage = () => {
             {txHash && (
               <a
                 className={styles.testTxLink}
-                href={`${EXPLORER_TX}${txHash}`}
+                href={`${txChain === 'base-sepolia' ? 'https://sepolia.basescan.org/tx/' : EXPLORER_TX}${txHash}`}
                 target="_blank"
                 rel="noreferrer"
               >
-                查看交易 ↗
+                查看交易 ↗{txChain === 'base-sepolia' ? '（Base Sepolia）' : ''}
               </a>
             )}
           </div>
