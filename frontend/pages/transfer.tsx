@@ -119,7 +119,6 @@ const TransferPage: NextPage = () => {
           })
         : Promise.resolve(0n),
     ])
-
     setTokenBalances({
       USDC: formatTokenBalance(usdcBalance, 6),
       BOX: formatTokenBalance(boxBalance, 18),
@@ -378,7 +377,6 @@ const TransferPage: NextPage = () => {
                   <span className={styles.sectionTitle}>转账数量</span>
                   <span className={styles.balanceText}>余额: {selectedTokenBalance}</span>
                 </div>
-
                 <div className={styles.amountRow}>
                   <input
                     className={styles.amountInput}
