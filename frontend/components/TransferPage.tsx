@@ -26,6 +26,8 @@ const CHAINS = {
 
 const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS as `0x${string}` | undefined
 const BOX_ADDRESS = process.env.NEXT_PUBLIC_BOX_ADDRESS as `0x${string}` | undefined
+const BASE_USDC_ADDRESS = process.env.NEXT_PUBLIC_BASE_USDC_ADDRESS as `0x${string}` | undefined
+const BASE_BOX_ADDRESS = process.env.NEXT_PUBLIC_BASE_BOX_ADDRESS as `0x${string}` | undefined
 const TRANSFER_EXECUTOR_ADDRESS = process.env.NEXT_PUBLIC_TRANSFER_EXECUTOR_ADDRESS as
   | `0x${string}`
   | undefined
@@ -167,21 +169,25 @@ const TransferPage: NextPage = () => {
     const wallet = getAddress(nextAccount)
     const publicClient = chainKey === 'sepolia' ? sepoliaPublic : baseSepoliaPublic
 
+    // 根据链选择正确的代币地址
+    const usdcAddr = chainKey === 'sepolia' ? USDC_ADDRESS : BASE_USDC_ADDRESS
+    const boxAddr = chainKey === 'sepolia' ? BOX_ADDRESS : BASE_BOX_ADDRESS
+
     try {
       // 1. 获取钱包中的 token 余额
       const [ethBalance, usdcBalance, boxBalance] = await Promise.all([
         publicClient.getBalance({ address: wallet }),
-        USDC_ADDRESS
+        usdcAddr
           ? publicClient.readContract({
-              address: USDC_ADDRESS,
+              address: usdcAddr,
               abi: erc20Abi,
               functionName: 'balanceOf',
               args: [wallet],
             })
           : Promise.resolve(0n),
-        BOX_ADDRESS
+        boxAddr
           ? publicClient.readContract({
-              address: BOX_ADDRESS,
+              address: boxAddr,
               abi: erc20Abi,
               functionName: 'balanceOf',
               args: [wallet],
@@ -371,7 +377,9 @@ const TransferPage: NextPage = () => {
             value: transferAmount,
           })
         } else {
-          const tokenAddress = token === 'USDC' ? USDC_ADDRESS : BOX_ADDRESS
+          const tokenAddress = chainKey === 'sepolia'
+            ? (token === 'USDC' ? USDC_ADDRESS : BOX_ADDRESS)
+            : (token === 'USDC' ? BASE_USDC_ADDRESS : BASE_BOX_ADDRESS)
           if (!tokenAddress) throw new Error(`${token} 合约地址未配置`)
           hash = await walletClient.writeContract({
             account: sender,

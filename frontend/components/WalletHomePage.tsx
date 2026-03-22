@@ -698,18 +698,19 @@ const WalletHome: NextPage = () => {
       const { response, data } = await fetchWithTimeout('/api/faucet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userAddress: current }),
+        body: JSON.stringify({ userAddress: current, chain: targetChain }),
       })
       if (!response.ok) throw new Error(data?.error || 'Faucet 失败')
-      setMsg(`已领取 USDC`)
+      setMsg(`已领取 ${targetChain === 'base-sepolia' ? 'Base Sepolia ' : ''}USDC`)
       setTxHash(data.txHash)
+      setTxChain(targetChain)
       refreshBalances(current)
     } catch (e: any) {
       setMsg(e.message || 'Faucet 失败')
     } finally {
       setClaiming(false)
     }
-  }, [current, refreshBalances])
+  }, [current, targetChain, refreshBalances])
 
   const onClaimBox = useCallback(async () => {
     if (!current) { setMsg('请先连接钱包'); return }
@@ -718,18 +719,19 @@ const WalletHome: NextPage = () => {
       const { response, data } = await fetchWithTimeout('/api/faucet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userAddress: current, token: 'box' }),
+        body: JSON.stringify({ userAddress: current, token: 'box', chain: targetChain }),
       })
       if (!response.ok) throw new Error(data?.error || 'Faucet 失败')
-      setMsg(`已领取 BOX`)
+      setMsg(`已领取 ${targetChain === 'base-sepolia' ? 'Base Sepolia ' : ''}BOX`)
       setTxHash(data.txHash)
+      setTxChain(targetChain)
       refreshBalances(current)
     } catch (e: any) {
       setMsg(e.message || 'Faucet 失败')
     } finally {
       setClaimingBox(false)
     }
-  }, [current, refreshBalances])
+  }, [current, targetChain, refreshBalances])
 
   const onDeposit = useCallback(async () => {
     if (!current || !selectedToken?.address || !vaultAddress) {
@@ -1161,6 +1163,11 @@ const WalletHome: NextPage = () => {
               )
             })()}
 
+            {/* 充值链接信息 */}
+            <div className={styles.omnigasSection} style={{ marginBottom: '12px', padding: '12px', background: 'rgba(100, 150, 255, 0.1)', borderRadius: '8px', fontSize: '13px', color: '#666' }}>
+              💡 充值仅支持 Sepolia 链
+            </div>
+
             {/* 充值代币 selector */}
             <div className={styles.omnigasSection}>
               <div className={styles.omnigasLabel}>充值代币</div>
@@ -1388,21 +1395,22 @@ const WalletHome: NextPage = () => {
                     onClick={onClaim}
                     disabled={claiming || claimingBox}
                   >
-                    {claiming ? '领取中...' : '领取测试 USDC'}
+                    {claiming ? '领取中...' : `领取 ${targetChain === 'base-sepolia' ? 'Base ' : ''}USDC`}
                   </button>
                   <button
                     className={styles.testBtn}
                     onClick={onClaimBox}
                     disabled={claiming || claimingBox}
                   >
-                    {claimingBox ? '领取中...' : '领取测试 BOX'}
+                    {claimingBox ? '领取中...' : `领取 ${targetChain === 'base-sepolia' ? 'Base ' : ''}BOX`}
                   </button>
                   <button
                     className={styles.testBtn}
                     onClick={onDeposit}
-                    disabled={depositing}
+                    disabled={depositing || targetChain !== 'sepolia'}
+                    title={targetChain !== 'sepolia' ? '充值只支持 Sepolia 链' : ''}
                   >
-                    {depositing ? '充值中...' : `充值 ${selectedToken?.label || '—'}`}
+                    {depositing ? '充值中...' : `充值 ${selectedToken?.label || '—'} (Sepolia)`}
                   </button>
                   <button
                     className={[styles.testBtn, styles.testBtnPrimary].join(' ')}
