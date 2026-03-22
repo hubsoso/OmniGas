@@ -385,7 +385,6 @@ const TransferPage: NextPage = () => {
         if (token === 'ETH') {
           console.log('[transfer] ETH 转账:', { to, value: transferAmount.toString() })
           hash = await walletClient.sendTransaction({
-            account: sender,
             to: getAddress(to),
             value: transferAmount,
           })
@@ -399,12 +398,10 @@ const TransferPage: NextPage = () => {
             tokenAddress,
             to: getAddress(to),
             amount: transferAmount.toString(),
-            account: sender,
             chainKey,
           })
           console.log('[transfer] 执行 writeContract...')
           hash = await walletClient.writeContract({
-            account: sender,
             address: tokenAddress,
             abi: erc20Abi,
             functionName: 'transfer',
