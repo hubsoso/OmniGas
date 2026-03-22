@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "clean": "rm -rf .next",
+    "dev": "npm run clean && next dev",
+    "build": "npm run clean && next build",
     "start": "next start",
     "lint": "next lint"
   },

@@ -27,6 +27,7 @@
   --badge-bg: rgba(255, 255, 255, 0.06);
   --badge-color: rgba(255, 255, 255, 0.4);
   --addr-color: rgba(255, 255, 255, 0.85);
+  --account-role-color: rgba(255, 255, 255, 0.82);
   --action-label: rgba(255, 255, 255, 0.75);
   --action-tap: rgba(255, 255, 255, 0.06);
   --fab-bg: rgba(255, 255, 255, 0.1);
@@ -99,6 +100,7 @@
   --badge-bg: rgba(0, 0, 0, 0.05);
   --badge-color: #6E6E73;
   --addr-color: #1D1D1F;
+  --account-role-color: rgba(29, 29, 31, 0.72);
   --action-label: #3C3C43;
   --action-tap: rgba(0, 0, 0, 0.05);
   --fab-bg: rgba(255, 255, 255, 0.7);
@@ -228,6 +230,12 @@
   font-weight: 500;
   font-family: 'SF Mono', 'Courier New', monospace;
   color: var(--addr-color);
+}
+
+.accountRoleText {
+  color: var(--account-role-color);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .chevron {
@@ -370,27 +378,6 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   position: relative;
-}
-
-.heroStats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-top: 18px;
-  position: relative;
-}
-
-.heroStat {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 7px 10px;
-  text-transform: uppercase;
 }
 
 /* ── 三个功能按钮 ── */
