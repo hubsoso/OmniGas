@@ -18,6 +18,25 @@ npm run dev # run the development server
 
 Navigate to [http://localhost:3000](http://localhost:3000) to see the widget.
 
+## Deploying on Vercel
+
+This app should be deployed from the `frontend/` directory.
+
+1. Import the repository into Vercel.
+2. Set the project `Root Directory` to `frontend`.
+3. Add the environment variables listed in `frontend/.env.example`.
+4. Deploy with the default `Next.js` framework preset.
+
+If you prefer the CLI:
+
+```bash
+cd frontend
+vercel
+vercel --prod
+```
+
+`frontend/vercel.json` already includes function timeout settings for the API routes used by the relayer.
+
 ---
 
 The `SwapWidget` component is passed everything it needs to render:
