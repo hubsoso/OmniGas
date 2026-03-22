@@ -97,10 +97,90 @@ declare global {
   interface Window { ethereum?: any }
 }
 
-type PendingAction = 'omnigas' | 'transfer' | 'swap' | ''
+type PendingAction = 'omnigas' | 'transfer' | ''
 type OmnigasToken = 'USDC' | 'BOX'
+type ComingSoonFeature = 'swap' | 'dapp' | 'staking' | 'cardTopup' | 'more' | ''
+type LocaleMode = 'zh' | 'en'
 
 const THEME_ICONS: Record<ThemeMode, string> = { system: '⚙️', dark: '🌙', light: '☀️' }
+
+const FEATURE_PREVIEWS: Record<Exclude<ComingSoonFeature, ''>, Record<LocaleMode, {
+  eyebrow: string
+  title: string
+  description: string
+  points: string[]
+}>> = {
+  swap: {
+    zh: {
+      eyebrow: '兑换功能',
+      title: 'Swap 兑换',
+      description: '兑换功能会继续打磨成更轻量的流转体验，把路径、价格与执行反馈整合得更清晰。',
+      points: ['更简洁的兑换流程', '更明确的报价与滑点信息', '统一交易状态反馈'],
+    },
+    en: {
+      eyebrow: 'Swap',
+      title: 'Swap',
+      description: 'The swap flow will be refined into a cleaner experience with clearer routes, pricing, and execution feedback.',
+      points: ['Cleaner swap flow', 'Clearer quotes and slippage info', 'Unified transaction feedback'],
+    },
+  },
+  dapp: {
+    zh: {
+      eyebrow: 'DApp 交易',
+      title: 'DApp 交易',
+      description: '未来会把常见链上交互整合成一键入口，让授权、支付和提交动作更顺滑。',
+      points: ['精选热门 DApp 模板', '统一 gasless 交互体验', '交易前关键风险提示'],
+    },
+    en: {
+      eyebrow: 'DApp transactions',
+      title: 'DApp Transactions',
+      description: 'Common onchain interactions will be organized into guided entry points for smoother approval, payment, and submission flows.',
+      points: ['Curated DApp templates', 'Unified gasless interaction flow', 'Clear risk hints before submission'],
+    },
+  },
+  staking: {
+    zh: {
+      eyebrow: '质押功能',
+      title: '质押赚取收益',
+      description: '计划支持更轻量的质押流程，在当前钱包体验里直接完成资产存入与收益查看。',
+      points: ['主流资产质押入口', '收益与周期概览', '到期提醒与状态跟踪'],
+    },
+    en: {
+      eyebrow: 'Staking',
+      title: 'Staking',
+      description: 'Staking will be streamlined so deposits, rewards, and status tracking can happen in the same wallet experience.',
+      points: ['Mainstream staking entries', 'Yield and duration overview', 'Maturity reminders and tracking'],
+    },
+  },
+  cardTopup: {
+    zh: {
+      eyebrow: '卡片充值',
+      title: '卡片充值',
+      description: '会把链上余额与消费场景串起来，支持更自然的充值与资金划转体验。',
+      points: ['常用充值面额', '预计到账与手续费展示', '统一订单状态反馈'],
+    },
+    en: {
+      eyebrow: 'Card top-ups',
+      title: 'Card Top-ups',
+      description: 'Card funding will connect onchain balances with everyday spending through a simpler top-up and transfer experience.',
+      points: ['Common top-up amounts', 'Arrival time and fee preview', 'Unified order status feedback'],
+    },
+  },
+  more: {
+    zh: {
+      eyebrow: '更多能力',
+      title: '更多能力',
+      description: '除了基础转账和兑换，我们还会继续扩展更多高频功能与生活化场景。',
+      points: ['支付与订阅类场景', '活动任务与权益中心', '更完整的账户资产编排'],
+    },
+    en: {
+      eyebrow: 'More',
+      title: 'More Features',
+      description: 'Beyond basic transfer and swap, more high-frequency and real-world scenarios will be added over time.',
+      points: ['Payments and subscriptions', 'Campaigns and benefits hub', 'Richer account asset orchestration'],
+    },
+  },
+}
 
 // ── 组件 ─────────────────────────────────────────────
 const WalletHome: NextPage = () => {
@@ -121,6 +201,8 @@ const WalletHome: NextPage = () => {
   const [showLogin, setShowLogin] = useState(false)
   const [showSwitcher, setShowSwitcher] = useState(false)
   const [pendingAction, setPendingAction] = useState<PendingAction>('')
+  const [comingSoonFeature, setComingSoonFeature] = useState<ComingSoonFeature>('')
+  const [locale, setLocale] = useState<LocaleMode>('zh')
 
   // 测试面板
   const [showTest, setShowTest] = useState(false)
@@ -150,6 +232,7 @@ const WalletHome: NextPage = () => {
   const [delegateInput, setDelegateInput] = useState('') // 授权/撤销输入框
   const [delegating, setDelegating] = useState(false)
   const [subAccountAuthStatus, setSubAccountAuthStatus] = useState<Record<string, boolean>>({}) // 子账户链上授权状态
+  const [subAccountAuthReady, setSubAccountAuthReady] = useState(false) // 子账户授权状态是否已完成首次同步
   const [authorizingSubAccount, setAuthorizingSubAccount] = useState<string>('') // 正在授权的子账户地址
 
   const isSepoliaMode = networkMode === 'sepolia'
@@ -193,10 +276,6 @@ const WalletHome: NextPage = () => {
   }, [accounts])
 
   const executeAction = useCallback((action: PendingAction) => {
-    if (action === 'swap') {
-      void router.push('/swap')
-      return
-    }
     if (action === 'transfer') {
       void router.push('/transfer')
       return
@@ -258,6 +337,90 @@ const WalletHome: NextPage = () => {
     executeAction(action)
   }, [current, executeAction])
 
+  const openComingSoon = useCallback((feature: Exclude<ComingSoonFeature, ''>) => {
+    setComingSoonFeature(feature)
+  }, [])
+
+  const t = locale === 'zh'
+    ? {
+        pageTitle: 'OmniGas 钱包',
+        vaultTotal: 'Vault 总资产',
+        network: 'Sepolia 测试网',
+        heroMeta: 'DApp 交易、质押、卡片充值等更多功能',
+        heroFootnote: '围绕更简洁的 Gasless 钱包体验打造',
+        heroStat1: 'Gasless',
+        heroStat2: '多场景',
+        heroStat3: '持续扩展',
+        availableEyebrow: '当前可用',
+        availableTitle: '核心功能',
+        coreTag: '核心',
+        omnigas: '全能服务费',
+        omnigasSub: 'Gasless 服务费资金池',
+        transfer: '转账',
+        transferSub: '快速发起资产转账',
+        progressEyebrow: '后续开发',
+        progressTitle: '即将支持',
+        progressDesc: '保持当前语言，逐步扩展更完整的链上与支付场景。',
+        comingSoon: '敬请期待',
+        swapTitle: 'Swap',
+        swapDesc: '兑换页面先纳入后续开发区，等交互和视觉一起收敛后再开放。',
+        dappTitle: 'DApp 交易',
+        dappDesc: '连接更多链上应用，统一完成授权与发起交易。',
+        stakingTitle: '质押',
+        stakingDesc: '把质押、收益和状态查看收进同一个入口。',
+        cardTopupTitle: '卡片充值',
+        cardTopupDesc: '为现实支付场景预留更轻量的资金入口和状态反馈。',
+        moreTitle: '更多',
+        moreDesc: '预留更多能力入口，方便后续继续扩展产品矩阵。',
+        connectWallet: '连接钱包',
+        connectBefore: '使用',
+        connectAfter: '功能前，请先连接你的钱包',
+        connectBtn: 'MetaMask 连接',
+        cancel: '取消',
+        featureSoon: '敬请期待，我们会在后续版本逐步开放。',
+        featureClose: '我知道了',
+        pendingActionMap: { omnigas: '全能服务费', transfer: '转账' } as Record<PendingAction, string>,
+      }
+    : {
+        pageTitle: 'OmniGas Wallet',
+        vaultTotal: 'Vault Balance',
+        network: 'Sepolia Testnet',
+        heroMeta: 'DApp transactions, staking, card top-ups, and more',
+        heroFootnote: 'Built around a cleaner gasless wallet experience',
+        heroStat1: 'Gasless',
+        heroStat2: 'Multi-scene',
+        heroStat3: 'Expanding',
+        availableEyebrow: 'Available',
+        availableTitle: 'Core Actions',
+        coreTag: 'Core',
+        omnigas: 'OmniGas Fee',
+        omnigasSub: 'Gasless fee vault',
+        transfer: 'Transfer',
+        transferSub: 'Send assets fast',
+        progressEyebrow: 'In Progress',
+        progressTitle: 'Coming Next',
+        progressDesc: 'Expanding into richer onchain and payment scenarios while keeping the same visual language.',
+        comingSoon: 'Coming soon',
+        swapTitle: 'Swap',
+        swapDesc: 'The swap page is grouped into the upcoming section until both flow and visual polish are ready.',
+        dappTitle: 'DApp Transactions',
+        dappDesc: 'Connect more onchain apps with a more unified interaction flow.',
+        stakingTitle: 'Staking',
+        stakingDesc: 'Bring deposits, rewards, and status into one entry point.',
+        cardTopupTitle: 'Card Top-ups',
+        cardTopupDesc: 'Reserve a lighter funding entry for real-world payment scenarios.',
+        moreTitle: 'More',
+        moreDesc: 'Keep space for future capabilities as the product expands.',
+        connectWallet: 'Connect Wallet',
+        connectBefore: 'Please connect your wallet before using ',
+        connectAfter: '',
+        connectBtn: 'Connect MetaMask',
+        cancel: 'Cancel',
+        featureSoon: 'Coming soon. We will roll this out in a later version.',
+        featureClose: 'Got it',
+        pendingActionMap: { omnigas: 'OmniGas Fee', transfer: 'Transfer' } as Record<PendingAction, string>,
+      }
+
   // ── 测试面板逻辑 ─────────────────────────────────────
   const refreshBalances = useCallback(async (address?: string) => {
     const addr = address || current
@@ -290,7 +453,13 @@ const WalletHome: NextPage = () => {
 
   // 刷新子账户链上授权状态
   const refreshSubAccountAuthStatus = useCallback(async () => {
-    if (!primaryAccount || !vaultAddress || accounts.length <= 1) return
+    if (!primaryAccount || !vaultAddress || accounts.length <= 1) {
+      setSubAccountAuthStatus({})
+      setSubAccountAuthReady(true)
+      return
+    }
+
+    setSubAccountAuthReady(false)
     const subs = accounts.filter(acc => acc.toLowerCase() !== primaryAccount.toLowerCase())
     const results: Record<string, boolean> = {}
     await Promise.all(subs.map(async sub => {
@@ -307,6 +476,7 @@ const WalletHome: NextPage = () => {
       }
     }))
     setSubAccountAuthStatus(results)
+    setSubAccountAuthReady(true)
   }, [accounts, primaryAccount])
 
   // 从 cookie 缓存立即恢复余额，避免白屏等待
@@ -630,15 +800,15 @@ const WalletHome: NextPage = () => {
   return (
     <div className={[styles.phone, isLight ? styles.phoneLight : ''].join(' ')}>
       <Head>
-        <title>OmniGas Wallet</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <title>{t.pageTitle}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className={styles.inner}>
+      <main className={styles.inner}>
         {/* 顶部状态栏 */}
         <div className={styles.statusBar}>
           {current ? (
-            <button className={styles.accountBtn} onClick={() => setShowSwitcher(true)}>
+            <button className={styles.accountBtn} onClick={() => setShowSwitcher(true)} aria-label={locale === 'zh' ? '打开账户切换' : 'Open account switcher'}>
               <div className={styles.avatar} style={{ background: getAvatarColor(current) }}>
                 {current.slice(2, 4).toUpperCase()}
               </div>
@@ -656,19 +826,33 @@ const WalletHome: NextPage = () => {
             <span className={styles.notConnected}>未连接</span>
           )}
 
-          {/* 右上角主题切换 */}
-          <button
-            className={styles.themeBtn}
-            onClick={cycleTheme}
-            title={`当前：${themeMode === 'system' ? '跟随系统' : themeMode === 'dark' ? '深色' : '浅色'}`}
-          >
-            {THEME_ICONS[themeMode]}
-          </button>
+          <div className={styles.topActions}>
+            <button
+              className={styles.localeBtn}
+              onClick={() => setLocale((prev) => (prev === 'zh' ? 'en' : 'zh'))}
+              title={locale === 'zh' ? '切换到英文' : 'Switch to Chinese'}
+              aria-label={locale === 'zh' ? '切换到英文' : 'Switch to Chinese'}
+            >
+              {locale === 'zh' ? '中' : 'EN'}
+            </button>
+
+            <button
+              className={styles.themeBtn}
+              onClick={cycleTheme}
+              title={locale === 'zh'
+                ? `当前：${themeMode === 'system' ? '跟随系统' : themeMode === 'dark' ? '深色' : '浅色'}`
+                : `Current: ${themeMode === 'system' ? 'System' : themeMode === 'dark' ? 'Dark' : 'Light'}`}
+              aria-label={locale === 'zh' ? '切换主题' : 'Toggle theme'}
+            >
+              {THEME_ICONS[themeMode]}
+            </button>
+          </div>
         </div>
 
         {/* 余额卡片 */}
-        <div className={styles.balanceCard}>
-          <div className={styles.balanceLabel}>Vault 总资产</div>
+        <section className={styles.balanceCard}>
+          <div className={styles.balanceGlow} aria-hidden="true" />
+          <div className={styles.balanceLabel}>{t.vaultTotal}</div>
           <div className={styles.balanceAmount}>
             ${current && isSepoliaMode
               ? (parseFloat(balances.usdcBalance || '0') + parseFloat(balances.boxBalance || '0')).toFixed(2)
@@ -676,12 +860,23 @@ const WalletHome: NextPage = () => {
           </div>
           <div className={styles.networkBadge}>
             <span className={styles.networkDot} />
-            Sepolia Testnet
+            {t.network}
           </div>
-        </div>
+          <div className={styles.balanceMeta}>
+            {t.heroMeta}
+          </div>
+          <div className={styles.balanceFootnote}>
+            {t.heroFootnote}
+          </div>
+          <div className={styles.heroStats} aria-hidden="true">
+            <span className={styles.heroStat}>{t.heroStat1}</span>
+            <span className={styles.heroStat}>{t.heroStat2}</span>
+            <span className={styles.heroStat}>{t.heroStat3}</span>
+          </div>
+        </section>
 
         {/* 主账户：未授权子账户提醒 */}
-        {isSepoliaMode && primaryAccount && current === primaryAccount && (() => {
+        {isSepoliaMode && primaryAccount && current === primaryAccount && subAccountAuthReady && (() => {
           const unauthorizedSubs = accounts.filter(acc =>
             acc.toLowerCase() !== primaryAccount.toLowerCase() &&
             !subAccountAuthStatus[acc.toLowerCase()]
@@ -694,25 +889,88 @@ const WalletHome: NextPage = () => {
           )
         })()}
 
-        {/* 三个功能按钮 */}
+        {/* 已上线功能 */}
+        <section className={styles.homeSection}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <div className={styles.sectionEyebrow}>{t.availableEyebrow}</div>
+            <h2 className={styles.sectionTitle}>{t.availableTitle}</h2>
+          </div>
+          <span className={styles.sectionHint}>{t.coreTag}</span>
+        </div>
         <div className={styles.actions}>
           <button className={styles.actionCard} onClick={() => handleAction('omnigas')}>
             <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>⛽</div>
-            <span className={styles.actionLabel}>全能服务费</span>
+            <span className={styles.actionLabel}>{t.omnigas}</span>
+            <span className={styles.actionSubLabel}>{t.omnigasSub}</span>
           </button>
           <button className={styles.actionCard} onClick={() => handleAction('transfer')}>
             <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #10B981, #3B82F6)' }}>↗</div>
-            <span className={styles.actionLabel}>转账</span>
-          </button>
-          <button className={styles.actionCard} onClick={() => handleAction('swap')}>
-            <div className={styles.actionIcon} style={{ background: 'linear-gradient(135deg, #F59E0B, #EF4444)' }}>⇄</div>
-            <span className={styles.actionLabel}>Swap</span>
+            <span className={styles.actionLabel}>{t.transfer}</span>
+            <span className={styles.actionSubLabel}>{t.transferSub}</span>
           </button>
         </div>
-      </div>
+        </section>
+
+        {/* 即将支持 */}
+        <section className={styles.featureShowcase}>
+          <div className={styles.showcaseHeader}>
+            <div className={styles.sectionEyebrow}>{t.progressEyebrow}</div>
+            <h2 className={styles.sectionTitle}>{t.progressTitle}</h2>
+            <p className={styles.showcaseDesc}>{t.progressDesc}</p>
+          </div>
+
+          <div className={styles.featureGrid}>
+            <button className={styles.featureCard} onClick={() => openComingSoon('swap')}>
+              <div className={styles.featureCardTop}>
+                <div className={styles.featureIcon} style={{ background: 'linear-gradient(135deg, #F59E0B, #EF4444)' }}>⇄</div>
+                <span className={styles.featureBadge}>{t.comingSoon}</span>
+              </div>
+              <strong className={styles.featureTitle}>{t.swapTitle}</strong>
+              <span className={styles.featureDesc}>{t.swapDesc}</span>
+            </button>
+
+            <button className={styles.featureCard} onClick={() => openComingSoon('dapp')}>
+              <div className={styles.featureCardTop}>
+                <div className={styles.featureIcon} style={{ background: 'linear-gradient(135deg, #1D4ED8, #06B6D4)' }}>◈</div>
+                <span className={styles.featureBadge}>{t.comingSoon}</span>
+              </div>
+              <strong className={styles.featureTitle}>{t.dappTitle}</strong>
+              <span className={styles.featureDesc}>{t.dappDesc}</span>
+            </button>
+
+            <button className={styles.featureCard} onClick={() => openComingSoon('staking')}>
+              <div className={styles.featureCardTop}>
+                <div className={styles.featureIcon} style={{ background: 'linear-gradient(135deg, #0F766E, #14B8A6)' }}>◎</div>
+                <span className={styles.featureBadge}>{t.comingSoon}</span>
+              </div>
+              <strong className={styles.featureTitle}>{t.stakingTitle}</strong>
+              <span className={styles.featureDesc}>{t.stakingDesc}</span>
+            </button>
+
+            <button className={styles.featureCard} onClick={() => openComingSoon('cardTopup')}>
+              <div className={styles.featureCardTop}>
+                <div className={styles.featureIcon} style={{ background: 'linear-gradient(135deg, #EA580C, #F59E0B)' }}>▣</div>
+                <span className={styles.featureBadge}>{t.comingSoon}</span>
+              </div>
+              <strong className={styles.featureTitle}>{t.cardTopupTitle}</strong>
+              <span className={styles.featureDesc}>{t.cardTopupDesc}</span>
+            </button>
+
+            <button className={styles.featureCard} onClick={() => openComingSoon('more')}>
+              <div className={styles.featureCardTop}>
+                <div className={styles.featureIcon} style={{ background: 'linear-gradient(135deg, #7C3AED, #EC4899)' }}>⋯</div>
+                <span className={styles.featureBadge}>{t.comingSoon}</span>
+              </div>
+              <strong className={styles.featureTitle}>{t.moreTitle}</strong>
+              <span className={styles.featureDesc}>{t.moreDesc}</span>
+            </button>
+          </div>
+        </section>
+      </main>
 
       {/* 右下角测试入口 */}
-      <button className={styles.testFab} onClick={() => { setShowTest(true); setMsg(''); setTxHash('') }}>
+      <button className={styles.testFab} onClick={() => { setShowTest(true); setMsg(''); setTxHash('') }} aria-label={locale === 'zh' ? '打开测试面板' : 'Open test panel'}>
         🧪
       </button>
 
@@ -721,12 +979,34 @@ const WalletHome: NextPage = () => {
         <div className={styles.overlay} onClick={() => setShowLogin(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalEmoji}>🔐</div>
-            <h2 className={styles.modalTitle}>连接钱包</h2>
+            <h2 className={styles.modalTitle}>{t.connectWallet}</h2>
             <p className={styles.modalDesc}>
-              使用{{ omnigas: '全能服务费', transfer: '转账', swap: 'Swap' }[pendingAction] || ''}功能前，请先连接你的钱包
+              {locale === 'zh'
+                ? `${t.connectBefore}${t.pendingActionMap[pendingAction] || ''}${t.connectAfter}`
+                : `${t.connectBefore}${t.pendingActionMap[pendingAction] || ''}`}
             </p>
-            <button className={styles.connectBtn} onClick={connectWallet}>MetaMask 连接</button>
-            <button className={styles.cancelBtn} onClick={() => setShowLogin(false)}>取消</button>
+            <button className={styles.connectBtn} onClick={connectWallet}>{t.connectBtn}</button>
+            <button className={styles.cancelBtn} onClick={() => setShowLogin(false)}>{t.cancel}</button>
+          </div>
+        </div>
+      )}
+
+      {comingSoonFeature && (
+        <div className={styles.overlayCenter} onClick={() => setComingSoonFeature('')}>
+          <div className={styles.comingSoonModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.comingSoonGlow} />
+            <div className={styles.comingSoonEyebrow}>{FEATURE_PREVIEWS[comingSoonFeature][locale].eyebrow}</div>
+            <h3 className={styles.comingSoonTitle}>{FEATURE_PREVIEWS[comingSoonFeature][locale].title}</h3>
+            <p className={styles.comingSoonDesc}>{FEATURE_PREVIEWS[comingSoonFeature][locale].description}</p>
+            <div className={styles.comingSoonList}>
+              {FEATURE_PREVIEWS[comingSoonFeature][locale].points.map((point) => (
+                <div key={point} className={styles.comingSoonItem}>• {point}</div>
+              ))}
+            </div>
+            <div className={styles.comingSoonNotice}>{t.featureSoon}</div>
+            <button className={styles.comingSoonBtn} onClick={() => setComingSoonFeature('')}>
+              {t.featureClose}
+            </button>
           </div>
         </div>
       )}
@@ -763,7 +1043,7 @@ const WalletHome: NextPage = () => {
                         {isPrimary && <span className={styles.accountBadge}>⭐ 主账户</span>}
                         {isCurrent && <span className={styles.accountBadge}>当前</span>}
                         {!isPrimary && primaryAccount && isAuthorized && <span className={styles.authBadgeOk}>✓ 已授权</span>}
-                        {!isPrimary && primaryAccount && !isAuthorized && <span className={styles.authBadgeWarn}>未授权</span>}
+                        {!isPrimary && primaryAccount && subAccountAuthReady && !isAuthorized && <span className={styles.authBadgeWarn}>未授权</span>}
                       </div>
                     </div>
                   </button>
@@ -781,7 +1061,7 @@ const WalletHome: NextPage = () => {
                     >
                       设为主账户
                     </button>
-                  ) : !isAuthorized && canAuthorize ? (
+                  ) : subAccountAuthReady && !isAuthorized && canAuthorize ? (
                     <button
                       className={styles.authBtn}
                       onClick={() => onAuthorizeSubAccount(acc)}
@@ -804,7 +1084,7 @@ const WalletHome: NextPage = () => {
           <div className={styles.omnigasSheetCenter} onClick={(e) => e.stopPropagation()}>
             <div className={styles.omnigasHeader}>
               <h3 className={styles.omnigasTitle}>充值代币</h3>
-              <button className={styles.testClose} onClick={() => setShowOmnigas(false)}>✕</button>
+              <button className={styles.testClose} onClick={() => setShowOmnigas(false)} aria-label={locale === 'zh' ? '关闭' : 'Close'}>✕</button>
             </div>
             {[
               { id: 'USDC' as OmnigasToken, label: 'USDC', chain: 'Sepolia', color: '#2775CA', vaultBal: balances.usdcBalance, badge: '测试币' },
@@ -842,7 +1122,7 @@ const WalletHome: NextPage = () => {
             <div className={styles.omnigasHeader}>
               <button className={styles.omnigasBackBtn} onClick={() => setOmnigasStep('list')}>‹</button>
               <h3 className={styles.omnigasTitle}>充值详情</h3>
-              <button className={styles.testClose} onClick={() => setShowOmnigas(false)}>✕</button>
+              <button className={styles.testClose} onClick={() => setShowOmnigas(false)} aria-label={locale === 'zh' ? '关闭' : 'Close'}>✕</button>
             </div>
 
             {/* 子账户提示：当前账户不是主账户时显示 */}
@@ -861,7 +1141,7 @@ const WalletHome: NextPage = () => {
             )}
 
             {/* 主账户视图：显示未授权的子账户并提供一键授权 */}
-            {primaryAccount && current === primaryAccount && (() => {
+            {primaryAccount && current === primaryAccount && subAccountAuthReady && (() => {
               const unauthorizedSubs = accounts.filter(acc =>
                 acc.toLowerCase() !== primaryAccount.toLowerCase() &&
                 !subAccountAuthStatus[acc.toLowerCase()]
@@ -972,7 +1252,7 @@ const WalletHome: NextPage = () => {
             <div className={styles.sheetHandle} />
             <div className={styles.testHeader}>
               <h3 className={styles.sheetTitle}>🧪 测试面板</h3>
-              <button className={styles.testClose} onClick={() => setShowTest(false)}>✕</button>
+              <button className={styles.testClose} onClick={() => setShowTest(false)} aria-label={locale === 'zh' ? '关闭' : 'Close'}>✕</button>
             </div>
 
             {/* 网络切换 */}
