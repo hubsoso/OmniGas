@@ -227,8 +227,6 @@ const WalletHome: NextPage = () => {
       console.log('[connectWallet] 新账户:', newAccounts, '已有账户:', accounts)
 
       if (newAccounts.length === 0) {
-        // 没有新账户，说明用户没有在MetaMask中切换账户
-        alert('👉 请在 MetaMask 中切换到新账户，然后再试一次')
         return
       }
 

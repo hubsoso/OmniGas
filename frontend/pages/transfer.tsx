@@ -130,7 +130,6 @@ const TransferPage: NextPage = () => {
           })
         : Promise.resolve(0n),
     ])
-
     setTokenBalances({
       USDC: formatTokenBalance(usdcBalance, 6),
       BOX: formatTokenBalance(boxBalance, 18),
@@ -490,7 +489,6 @@ const TransferPage: NextPage = () => {
                     )}
                   </div>
                 </div>
-
                 <div className={styles.amountRow}>
                   <input
                     className={styles.amountInput}
